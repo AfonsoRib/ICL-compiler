@@ -1,0 +1,5 @@
+(executable
+ (public_name icl)
+ (modules main)
+ (name main)
+ (libraries icl))

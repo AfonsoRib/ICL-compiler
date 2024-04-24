@@ -1,0 +1,135 @@
+open Env
+
+type exp =
+  |Add of exp * exp
+  |Sub of exp * exp
+  |Mult of exp * exp
+  |Div of exp * exp
+  |Fact of int
+  |Eq of exp * exp
+  |Ne of exp * exp
+  |Le of exp * exp
+  |Ge of exp * exp
+  |Lt of exp * exp
+  |Gt of exp * exp
+  |And of exp * exp
+  |Or of exp * exp
+  |Not of exp
+  |Statement of bool
+  |Let of (string * exp * string option) list * exp
+  |Id of string
+  |New of exp
+  |Deref of exp
+  |Assign of string * exp
+  |While of exp * exp
+  |IfThenElse of exp * exp * exp
+  |IfThen of exp * exp
+  |PrintLn of exp
+  |Print of exp
+  |Seq of exp * exp
+  |UnitExp
+
+type eval_result =
+  | Int of int
+  | Bool of bool
+  | Ref of eval_result ref
+  | Unit
+
+
+let rec string_of_eval_result = function
+  | Int n -> "Int " ^ string_of_int n
+  | Bool b -> "Bool" ^ string_of_bool b
+  | Unit -> "Unit"
+  | Ref r ->  (string_of_eval_result !r ) ^ " ref"
+
+let rec string_of_ref t contents_start contents_end typ =
+  match t with
+  | Ref r -> string_of_ref !r (contents_start ^ "{contents = ") ("}" ^ contents_end ) (typ ^ " ref" )
+  | Bool b -> "bool" ^ typ ^ " = " ^ contents_start ^ string_of_bool b ^ contents_end
+  | Unit -> "unit" ^ typ ^ " = " ^ contents_start ^ "()" ^ contents_end
+  | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
+
+
+let rec string_of_eval_result_clean = function
+  | Int n -> string_of_int n
+  | Bool b -> string_of_bool b
+  | Unit -> "Unit"
+  | Ref r -> string_of_eval_result_clean !r
+
+let rec eval (expr : exp) (env : eval_result environment option ref) : eval_result =
+  let not_operation f x =
+    match x with
+    | Bool b -> f b
+    | _ -> failwith "Cannot apply not to integer"
+  in
+  let boolean_operation f x y =
+    match (x,y) with
+    | (Bool b1, Bool b2) -> f b1 b2
+    | _ -> failwith "cannot apply boolean operation to integer"
+  in
+  let inequality_operation f x y =
+    match (x, y) with
+    | (Int i1, Int i2) -> f (Int i1) (Int i2)
+    | (Bool b1, Bool b2) -> f (Bool b1) (Bool b2)
+    | _ -> failwith "cannot compare boolean with integer"
+  in
+  let arythmetic_operation f x y =
+    match (x, y) with
+    | (Int i1, Int i2) -> f i1 i2
+    | _ -> failwith "Cannot apply operator to boolean"
+  in
+  match expr with
+  | Fact n ->  Int n
+  | Statement b -> Bool b
+  | Id x -> Env.find !env x
+  | Add (e1, e2) ->  Int(arythmetic_operation (+) (eval e1 env) (eval e2 env))
+  | Mult (e1, e2) -> Int(arythmetic_operation ( * ) (eval e1 env) (eval e2 env))
+  | Sub (e1, e2) -> Int(arythmetic_operation (-) (eval e1 env) (eval e2 env))
+  | Div (e1, e2) -> Int(arythmetic_operation (/) (eval e1 env) (eval e2 env))
+  | Eq (e1, e2) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
+  | Ne (e1, e2) -> Bool(inequality_operation (!=) (eval e1 env) (eval e2 env))
+  | Le (e1, e2) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))
+  | Ge (e1, e2) -> Bool(inequality_operation (>=) (eval e1 env) (eval e2 env))
+  | Lt (e1, e2) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
+  | Gt (e1, e2) -> Bool(inequality_operation (>) (eval e1 env) (eval e2 env))
+  | And (e1,e2) -> Bool(boolean_operation (&&) (eval e1 env) (eval e2 env))
+  | Or (e1,e2) -> Bool(boolean_operation (||) (eval e1 env) (eval e2 env))
+  | Not (e1) -> Bool(not_operation (not) (eval e1 env))
+  | Let (binds, e) ->
+     let rec add_to_env (bindings : (string * exp * string option) list) (n_env : eval_result environment option) =
+       match bindings with
+       | [] -> ()
+       | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in
+                           Env.bind n_env id v;
+                           add_to_env rest n_env
+     in
+     env := Env.begin_scope !env;
+     add_to_env binds (!env);
+     let res = eval e env in
+     env := Env.end_scope !env;
+     res
+  | New(e) -> Ref(ref (eval e env))
+  | Deref(e) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
+  | Assign(x, e) ->
+     let ref_result = Env.find !env x and
+         value_to_assign = eval e env in
+     (match ref_result with
+      | Ref r -> r := value_to_assign
+      | _ -> failwith "Left-hand side of assignment must be a reference")
+     ; Unit
+  | While(e1,e2) -> while (match (eval e1 env) with Bool b -> b | _ -> failwith "not a boolean") do
+                     ignore(eval e2 env)
+                    done;
+                    Unit
+  | PrintLn(e) -> print_endline (string_of_eval_result_clean (eval e env));
+                  Unit
+  | Print(e) -> print_string (string_of_eval_result_clean (eval e env));
+                Unit
+  | Seq(e1,e2) -> ignore(eval e1 env); eval e2 env
+  | IfThenElse(e1,e2,e3) -> (match (eval e1 env) with
+                  | Bool b -> if b then eval e2 env else eval e3 env
+                  | _ -> failwith "not a boolean")
+  | IfThen(e1,e2) -> (match (eval e1 env) with
+                  | Bool b -> if b then eval e2 env else Unit
+                  | _ -> failwith "not a boolean")
+  | UnitExp -> Unit

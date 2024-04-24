@@ -1,0 +1,4 @@
+(library
+ (name icl))
+(menhir (modules parser))
+(ocamllex (modules lexer))
