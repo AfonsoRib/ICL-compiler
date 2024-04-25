@@ -35,7 +35,6 @@ type eval_result =
   | Ref of eval_result ref
   | Unit
 
-
 let rec string_of_eval_result = function
   | Int n -> "Int " ^ string_of_int n
   | Bool b -> "Bool" ^ string_of_bool b

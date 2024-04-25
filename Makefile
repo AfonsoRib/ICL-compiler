@@ -1,4 +1,4 @@
-.PHONY: build clean run
+.PHONY: build clean run test
 
 build:
 	dune build @all
@@ -8,3 +8,6 @@ clean:
 
 run:
 	dune exec -- icl
+
+test:
+	dune runtest
