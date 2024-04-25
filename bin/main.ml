@@ -12,6 +12,7 @@ let main =
       let res = Ast.eval ast (ref None) in
       match res with
       | Int n -> printf "- : int = %d\n" (n); flush stdout
+      | Float f -> printf "- : float = %f\n" (f); flush stdout
       | Bool b -> printf "- : bool = %B\n" (b); flush stdout
       | Ref _ -> printf "- : %s\n" (Ast.string_of_ref res "" "" ""); flush stdout
       | Unit -> print_endline "- : unit = ()"(*"evaluated"*); flush stdout

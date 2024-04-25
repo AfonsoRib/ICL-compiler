@@ -6,6 +6,7 @@ type exp =
   |Mult of exp * exp
   |Div of exp * exp
   |Fact of int
+  |FloatFact of float
   |Eq of exp * exp
   |Ne of exp * exp
   |Le of exp * exp
@@ -31,12 +32,14 @@ type exp =
 
 type eval_result =
   | Int of int
+  | Float of float
   | Bool of bool
   | Ref of eval_result ref
   | Unit
 
 let rec string_of_eval_result = function
   | Int n -> "Int " ^ string_of_int n
+  | Float f -> "Float " ^ string_of_float f
   | Bool b -> "Bool" ^ string_of_bool b
   | Unit -> "Unit"
   | Ref r ->  (string_of_eval_result !r ) ^ " ref"
@@ -47,10 +50,12 @@ let rec string_of_ref t contents_start contents_end typ =
   | Bool b -> "bool" ^ typ ^ " = " ^ contents_start ^ string_of_bool b ^ contents_end
   | Unit -> "unit" ^ typ ^ " = " ^ contents_start ^ "()" ^ contents_end
   | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
+  | Float f -> "float" ^ typ ^ " = " ^ contents_start ^ string_of_float f ^ contents_end
 
 
 let rec string_of_eval_result_clean = function
   | Int n -> string_of_int n
+  | Float f -> string_of_float f
   | Bool b -> string_of_bool b
   | Unit -> "Unit"
   | Ref r -> string_of_eval_result_clean !r
@@ -69,22 +74,27 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   let inequality_operation f x y =
     match (x, y) with
     | (Int i1, Int i2) -> f (Int i1) (Int i2)
+    | (Float f1, Float f2) -> f (Float f1) (Float f2)
     | (Bool b1, Bool b2) -> f (Bool b1) (Bool b2)
     | _ -> failwith "cannot compare boolean with integer"
   in
-  let arythmetic_operation f x y =
+  let arythmetic_operation fint ffloat x y =
     match (x, y) with
-    | (Int i1, Int i2) -> f i1 i2
+    | (Int i1, Int i2) -> Int (fint i1 i2)
+    | (Float f1, Float f2) -> Float (ffloat f1 f2)
+    | (Int i1, Float f2) -> Float (ffloat (float_of_int i1) f2)
+    | (Float f1, Int i2) -> Float (ffloat f1 (float_of_int i2))
     | _ -> failwith "Cannot apply operator to boolean"
   in
   match expr with
   | Fact n ->  Int n
+  | FloatFact f -> Float f
   | Statement b -> Bool b
   | Id x -> Env.find !env x
-  | Add (e1, e2) ->  Int(arythmetic_operation (+) (eval e1 env) (eval e2 env))
-  | Mult (e1, e2) -> Int(arythmetic_operation ( * ) (eval e1 env) (eval e2 env))
-  | Sub (e1, e2) -> Int(arythmetic_operation (-) (eval e1 env) (eval e2 env))
-  | Div (e1, e2) -> Int(arythmetic_operation (/) (eval e1 env) (eval e2 env))
+  | Add (e1, e2) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
+  | Mult (e1, e2) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
+  | Sub (e1, e2) -> (arythmetic_operation (-) (-.) (eval e1 env) (eval e2 env))
+  | Div (e1, e2) -> (arythmetic_operation (/) ( /. ) (eval e1 env) (eval e2 env))
   | Eq (e1, e2) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
   | Ne (e1, e2) -> Bool(inequality_operation (<>) (eval e1 env) (eval e2 env))
   | Le (e1, e2) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))

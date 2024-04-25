@@ -70,8 +70,11 @@ exp:
     { Statement(true) }
   | FALSE
     { Statement(false) }
-  | n=NUM
-    { Fact(int_of_string n) }
+  | n = NUM
+    { if String.contains n '.'
+      then FloatFact(float_of_string n)
+      else Fact(int_of_string n)
+    }
   | id=ID
     { Id(id) }
   | e1=exp SEMICOLON e2=exp

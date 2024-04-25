@@ -3,6 +3,8 @@ open Env
 
 type typ=
   | IntType
+  | FloatType
+  | NumType
   | BoolType
   | UnitType
   | RefType of typ
@@ -15,6 +17,7 @@ let rec typ_str typ_string =
   | [] -> failwith "no such type"
   | [t] -> (match t with
           | "int" -> IntType
+          | "float" -> FloatType
           | "bool" -> BoolType
           | "unit" -> UnitType
           | "string" -> StringType
@@ -25,6 +28,8 @@ let rec typ_str typ_string =
 
 let rec str_typ = function
   | IntType -> "Int"
+  | FloatType -> "Float"
+  | NumType -> "Num"
   | BoolType -> "Bool"
   | UnitType -> "unit"
   | RefType t -> "Ref " ^ (str_typ t)
@@ -38,24 +43,43 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
       | RefType inner -> inner
       | _ -> t
     in
+    let resolve_num t1 t2 =
+      if t1 = IntType && t2 = IntType then IntType
+      else if t1 = FloatType && t2 = FloatType then FloatType
+      else if t1 = IntType && t2 = FloatType then FloatType
+      else if t1 = FloatType && t2 = IntType then FloatType
+      else NoneType
+    in
     let t1 = resolve_ref (typechecker e1 env) in
     let t2 = resolve_ref (typechecker e2 env) in
-    if t1 = t_in && t2 = t_in then t_out else NoneType
+
+    if t_in = NumType && t_out = NumType then
+      resolve_num t1 t2
+
+    else if t_in = NumType && t_out = BoolType then
+      if (t1 = IntType && t2 = IntType) || (t1 = FloatType && t2 = FloatType) then BoolType else NoneType
+
+    else if t_in = NumType && t_out != NumType then
+        if resolve_num t1 t2 != NoneType then t_out else NoneType
+
+    else if t1 = t_in && t2 = t_in then
+        t_out else NoneType
   in
   match e with
   | Fact _ ->  IntType
+  | FloatFact _ -> FloatType
   | Statement _ -> BoolType
   | Id x -> Env.find !env x
-  | Add (e1, e2) ->  typechecker_aux e1 e2 IntType IntType
-  | Mult (e1, e2) -> typechecker_aux e1 e2 IntType IntType
-  | Sub (e1, e2) -> typechecker_aux e1 e2 IntType IntType
-  | Div (e1, e2) -> typechecker_aux e1 e2 IntType IntType
-  | Eq (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
-  | Ne (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
-  | Le (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
-  | Ge (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
-  | Lt (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
-  | Gt (e1, e2) -> typechecker_aux e1 e2 IntType BoolType
+  | Add (e1, e2) ->  typechecker_aux e1 e2 NumType NumType
+  | Mult (e1, e2) -> typechecker_aux e1 e2 NumType NumType
+  | Sub (e1, e2) -> typechecker_aux e1 e2  NumType NumType
+  | Div (e1, e2) -> typechecker_aux e1 e2  NumType NumType
+  | Eq (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
+  | Ne (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
+  | Le (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
+  | Ge (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
+  | Lt (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
+  | Gt (e1, e2) -> typechecker_aux e1 e2 NumType BoolType
   | And (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType
   | Or (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType
   | Not (e1) -> typechecker e1 env
