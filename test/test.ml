@@ -20,7 +20,6 @@ let test_expected_failure input _ =
     | Failure _ -> ()
     | _ -> assert_failure "Expected type mismatch failure"
 
-
 let suite =
   "integration_tests">:::
   [
@@ -96,6 +95,10 @@ let suite =
     "test if-then-else new nested 2">::test_eval_string "if true then 1.0 else 2.0 end\n" (Ast.Float 1.0);
     "test if-then-else new nested 3">::test_eval_string "if true then true else false end\n" (Ast.Bool true);
     "test if-then-else new nested 4">::test_eval_string "if true then false else true end\n" (Ast.Bool false);
+    "test print">::test_eval_string "print 10\n" Ast.Unit;
+    "test println">::test_eval_string "println 10\n" Ast.Unit;
+    "test while loop with prints">::test_eval_string "let x = new 10 in (while !x > 0 do ((println !x) ; x := (!x - 1)) end)\n" Ast.Unit;
+    "test sequence">::test_eval_string "let x = new 3 in ((x := (!x - 1)) ; !x)\n" (Ast.Int 2);
   ]
 
 let () =
