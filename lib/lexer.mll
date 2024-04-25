@@ -47,4 +47,5 @@ rule token = parse
   |"bool" { TYPE "bool" }
   |"int" { TYPE "int" }
   |"ref" { TYPE "ref" }
+  |"unit" { TYPE "unit" }
   |identifier as id { ID id }

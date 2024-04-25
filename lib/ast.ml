@@ -86,7 +86,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Sub (e1, e2) -> Int(arythmetic_operation (-) (eval e1 env) (eval e2 env))
   | Div (e1, e2) -> Int(arythmetic_operation (/) (eval e1 env) (eval e2 env))
   | Eq (e1, e2) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
-  | Ne (e1, e2) -> Bool(inequality_operation (!=) (eval e1 env) (eval e2 env))
+  | Ne (e1, e2) -> Bool(inequality_operation (<>) (eval e1 env) (eval e2 env))
   | Le (e1, e2) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))
   | Ge (e1, e2) -> Bool(inequality_operation (>=) (eval e1 env) (eval e2 env))
   | Lt (e1, e2) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
