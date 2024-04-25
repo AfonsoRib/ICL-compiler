@@ -8,3 +8,8 @@
   - Make sure [ounit2](https://opam.ocaml.org/packages/ounit2/) is installed via opam
   - Run `eval $(opam env)` before running the tests
   - Run the tests with `make test`
+
+## Authors
+
+- Afonso Ribeiro 59895
+- Guilherme Figueira 60288
