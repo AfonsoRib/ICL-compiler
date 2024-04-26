@@ -29,12 +29,14 @@ type exp =
   |Print of exp
   |Seq of exp * exp
   |UnitExp
+  |String of string
 
 type eval_result =
   | Int of int
   | Float of float
   | Bool of bool
   | Ref of eval_result ref
+  | Str of string
   | Unit
 
 let rec string_of_eval_result = function
@@ -43,6 +45,7 @@ let rec string_of_eval_result = function
   | Bool b -> "Bool" ^ string_of_bool b
   | Unit -> "Unit"
   | Ref r ->  (string_of_eval_result !r ) ^ " ref"
+  | Str s -> "String " ^ s
 
 let rec string_of_ref t contents_start contents_end typ =
   match t with
@@ -51,7 +54,7 @@ let rec string_of_ref t contents_start contents_end typ =
   | Unit -> "unit" ^ typ ^ " = " ^ contents_start ^ "()" ^ contents_end
   | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
   | Float f -> "float" ^ typ ^ " = " ^ contents_start ^ string_of_float f ^ contents_end
-
+  | Str s -> "string" ^ typ ^ " = " ^ contents_start ^ s ^ contents_end
 
 let rec string_of_eval_result_clean = function
   | Int n -> string_of_int n
@@ -59,6 +62,7 @@ let rec string_of_eval_result_clean = function
   | Bool b -> string_of_bool b
   | Unit -> "Unit"
   | Ref r -> string_of_eval_result_clean !r
+  | Str s -> s
 
 let rec eval (expr : exp) (env : eval_result environment option ref) : eval_result =
   let not_operation f x =
@@ -142,3 +146,4 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
                   | Bool b -> if b then eval e2 env else Unit
                   | _ -> failwith "not a boolean")
   | UnitExp -> Unit
+  | String(s) -> Str s

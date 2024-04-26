@@ -15,7 +15,8 @@ let main =
       | Float f -> printf "- : float = %f\n" (f); flush stdout
       | Bool b -> printf "- : bool = %B\n" (b); flush stdout
       | Ref _ -> printf "- : %s\n" (Ast.string_of_ref res "" "" ""); flush stdout
-      | Unit -> print_endline "- : unit = ()"(*"evaluated"*); flush stdout
+      | Unit -> print_endline "- : unit = ()"; flush stdout
+      | Str s -> printf "- : string = %s\n" s; flush stdout
     with | Failure msg -> print_endline msg
          |_-> print_endline "Syntax error!"
   done

@@ -1,4 +1,5 @@
 %token<string> NUM
+%token<string> STRING
 %token PLUS
 %token MINUS
 %token MULT
@@ -129,6 +130,8 @@ exp:
     { Print(e) }
   | UNIT
     { UnitExp }
+  | s=STRING
+    {String s}
 
 type_refs_list:
     | TYPE
