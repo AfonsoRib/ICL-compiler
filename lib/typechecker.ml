@@ -4,7 +4,6 @@ open Env
 type typ=
   | IntType
   | FloatType
-  | NumType
   | BoolType
   | UnitType
   | RefType of typ
@@ -16,20 +15,19 @@ let rec typ_str typ_string =
   match typ_list with
   | [] -> failwith "no such type"
   | [t] -> (match t with
-          | "int" -> IntType
-          | "float" -> FloatType
-          | "bool" -> BoolType
-          | "unit" -> UnitType
-          | "string" -> StringType
-          | _  -> failwith "no such type ")
+            | "int" -> IntType
+            | "float" -> FloatType
+            | "bool" -> BoolType
+            | "unit" -> UnitType
+            | "string" -> StringType
+            | _  -> failwith "no such type ")
   | t::ts -> (match t with
-            | "ref" -> RefType(typ_str (String.concat " " (List.rev ts)))
-            | _ -> failwith "no such type")
+              | "ref" -> RefType(typ_str (String.concat " " (List.rev ts)))
+              | _ -> failwith "no such type")
 
 let rec str_typ = function
   | IntType -> "Int"
   | FloatType -> "Float"
-  | NumType -> "Num"
   | BoolType -> "Bool"
   | UnitType -> "unit"
   | RefType t -> "Ref " ^ (str_typ t)
@@ -37,42 +35,42 @@ let rec str_typ = function
   | StringType -> "String"
 
 let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
-  let typechecker_aux e1 e2 t_in t_out =
-    let resolve_num t1 t2 =
-      if t1 = IntType && t2 = IntType then IntType
-      else if t1 = FloatType && t2 = FloatType then FloatType
-      else if t1 = IntType && t2 = FloatType then FloatType
-      else if t1 = FloatType && t2 = IntType then FloatType
-      else NoneType
-    in
-    let t1 =  (typechecker e1 env) in
-    let t2 =  (typechecker e2 env) in
-
-    if t_in = NumType && t_out = NumType then
-      resolve_num t1 t2
-
-    else if t_in = NumType && t_out = BoolType then
-      if (t1 = IntType && t2 = IntType) || (t1 = FloatType && t2 = FloatType) then BoolType else NoneType
-
-    else if t_in = NumType && t_out != NumType then
-        if resolve_num t1 t2 != NoneType then t_out else NoneType
-
-    else if t1 = t_in && t2 = t_in then
-        t_out else NoneType
-  in
-  let rec typechecker_aux_aux e1 e2 (t_ins : typ list) t_out =
-    match t_ins with
-    | t::ts -> if typechecker_aux e1 e2 t t_out = t_out || typechecker_aux_aux e1 e2 ts t_out = t_out then t_out else NoneType
-    | [] ->  NoneType
-  in
   match e with
   | Fact _ ->  IntType
   | FloatFact _ -> FloatType
   | Statement _ -> BoolType
   | Id x -> Env.find !env x
-  | Add (e1, e2) | Mult (e1, e2) | Sub (e1, e2) | Div (e1, e2) -> typechecker_aux e1 e2 NumType NumType
-  | Ne (e1, e2)| Le (e1, e2)| Ge (e1, e2)| Lt (e1, e2)| Gt (e1, e2) | Eq (e1, e2) -> typechecker_aux_aux e1 e2 [NumType; BoolType; StringType; (*RefType*)] BoolType
-  | And (e1, e2) | Or (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType
+  | Add (e1, e2) | Mult (e1, e2) | Sub (e1, e2) | Div (e1, e2) ->
+     let t1 = (typechecker e1 env) and
+         t2 = typechecker e2 env
+     in
+     (match (t1,t2) with
+     | (IntType, IntType) -> IntType
+     | (IntType, FloatType) -> FloatType
+     | (FloatType, IntType) -> FloatType
+     | (FloatType, FloatType) -> FloatType
+     | _ -> NoneType)
+  | Ne (e1, e2)| Le (e1, e2)| Ge (e1, e2)| Lt (e1, e2)| Gt (e1, e2) | Eq (e1, e2) ->
+     let rec aux t1 t2 =
+       (match (t1,t2) with
+        | (IntType, IntType) -> IntType
+        | (FloatType, FloatType) -> FloatType
+        | (StringType, StringType) -> StringType
+        | (BoolType,BoolType) -> BoolType
+        | (RefType r1, RefType r2) -> aux r1 r2
+        | _ -> NoneType)
+     in
+     let t1 = typechecker e1 env and
+         t2 = typechecker e2 env
+     in
+     aux t1 t2
+  | And (e1, e2) | Or (e1, e2) ->
+     let t1 = typechecker e1 env and
+         t2 = typechecker e2 env
+     in
+     (match (t1, t2) with
+      | (BoolType, BoolType) -> BoolType
+      | _ -> NoneType)
   | Not (e1) -> typechecker e1 env
   | Let (binds, e) ->
      let rec add_to_env (bindings : (string * exp * string option) list) (n_env : typ environment option) =
@@ -81,7 +79,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
        | (id, e1, t1)::rest -> let v = (typechecker e1 (ref n_env)) in
                                (match t1 with
                                 | Some t ->
-                                  let typ = typ_str t in
+                                   let typ = typ_str t in
                                    if (typ <> v) then
                                      failwith ("for id \"" ^ id ^ "\" types don't match")
                                    else
