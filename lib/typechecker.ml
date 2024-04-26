@@ -53,10 +53,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
   | Ne (e1, e2)| Le (e1, e2)| Ge (e1, e2)| Lt (e1, e2)| Gt (e1, e2) | Eq (e1, e2) ->
      let rec aux t1 t2 =
        (match (t1,t2) with
-        | (IntType, IntType) -> IntType
-        | (FloatType, FloatType) -> FloatType
-        | (StringType, StringType) -> StringType
-        | (BoolType,BoolType) -> BoolType
+        | (IntType, IntType) | (FloatType, FloatType) | (StringType, StringType) | (BoolType,BoolType) -> BoolType
         | (RefType r1, RefType r2) -> aux r1 r2
         | _ -> NoneType)
      in
@@ -95,7 +92,6 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
      let res = typechecker e env in
      env := Env.end_scope !env;
      res
-  (* | _ -> NoneType *)
   | New(e) ->  RefType(typechecker e env)
   | Deref(e) ->
      (match typechecker e env with

@@ -8,7 +8,7 @@ let main =
       let ast = Parser.start Lexer.token lexbuf in
       let typecheck = Typechecker.typechecker ast (ref None) in
       if typecheck = Typechecker.NoneType then failwith "Failed typechecker pass. Expression type: None";
-      (*printf "type: %s\n" (Typechecker.str_typ typecheck);*)
+      (* printf "type: %s\n" (Typechecker.str_typ typecheck); *)
       let res = Ast.eval ast (ref None) in
       match res with
       | Int n -> printf "- : int = %d\n" (n); flush stdout
