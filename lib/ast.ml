@@ -68,12 +68,12 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   let not_operation f x =
     match x with
     | Bool b -> f b
-    | _ -> failwith "Cannot apply not to integer"
+    | _ -> failwith "Can only apply not to boolean"
   in
   let boolean_operation f x y =
     match (x,y) with
     | (Bool b1, Bool b2) -> f b1 b2
-    | _ -> failwith "cannot apply boolean operation to integer"
+    | _ -> failwith "Can only apply boolean operation to booleans"
   in
   let rec inequality_operation f x y =
     match (x, y) with
@@ -82,7 +82,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | (Bool b1, Bool b2) -> f (Bool b1) (Bool b2)
     | (Str s1, Str s2) -> f (Str s1) (Str s2)
     | (Ref r1, Ref r2) -> inequality_operation f !r1 !r2
-    | _ -> failwith "cannot compare boolean with integer"
+    | _ -> failwith "Type mismatch"
   in
   let arythmetic_operation fint ffloat x y =
     match (x, y) with
@@ -90,7 +90,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | (Float f1, Float f2) -> Float (ffloat f1 f2)
     | (Int i1, Float f2) -> Float (ffloat (float_of_int i1) f2)
     | (Float f1, Int i2) -> Float (ffloat f1 (float_of_int i2))
-    | _ -> failwith "Cannot apply operator to boolean"
+    | _ -> failwith "Type mismatch"
   in
   match expr with
   | Fact n ->  Int n
