@@ -80,6 +80,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | (Int i1, Int i2) -> f (Int i1) (Int i2)
     | (Float f1, Float f2) -> f (Float f1) (Float f2)
     | (Bool b1, Bool b2) -> f (Bool b1) (Bool b2)
+    | (Str s1, Str s2) -> f (Str s1) (Str s2)
     | _ -> failwith "cannot compare boolean with integer"
   in
   let arythmetic_operation fint ffloat x y =

@@ -38,11 +38,6 @@ let rec str_typ = function
 
 let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
   let typechecker_aux e1 e2 t_in t_out =
-    let resolve_ref t =
-      match t with
-      | RefType inner -> inner
-      | _ -> t
-    in
     let resolve_num t1 t2 =
       if t1 = IntType && t2 = IntType then IntType
       else if t1 = FloatType && t2 = FloatType then FloatType
@@ -50,8 +45,8 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
       else if t1 = FloatType && t2 = IntType then FloatType
       else NoneType
     in
-    let t1 = resolve_ref (typechecker e1 env) in
-    let t2 = resolve_ref (typechecker e2 env) in
+    let t1 =  (typechecker e1 env) in
+    let t2 =  (typechecker e2 env) in
 
     if t_in = NumType && t_out = NumType then
       resolve_num t1 t2
@@ -76,20 +71,8 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
   | Statement _ -> BoolType
   | Id x -> Env.find !env x
   | Add (e1, e2) | Mult (e1, e2) | Sub (e1, e2) | Div (e1, e2) -> typechecker_aux e1 e2 NumType NumType
-  (* | Add (e1, e2) ->  typechecker_aux e1 e2 NumType NumType *)
-  (* | Mult (e1, e2) -> typechecker_aux e1 e2 NumType NumType *)
-  (* | Sub (e1, e2) -> typechecker_aux e1 e2  NumType NumType *)
-  (* | Div (e1, e2) -> typechecker_aux e1 e2  NumType NumType *)
   | Ne (e1, e2)| Le (e1, e2)| Ge (e1, e2)| Lt (e1, e2)| Gt (e1, e2) | Eq (e1, e2) -> typechecker_aux_aux e1 e2 [NumType; BoolType; StringType; (*RefType*)] BoolType
-  (* | Eq (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
-  (* | Ne (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
-  (* | Le (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
-  (* | Ge (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
-  (* | Lt (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
-  (* | Gt (e1, e2) -> typechecker_aux e1 e2 NumType BoolType *)
   | And (e1, e2) | Or (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType
-  (* | And (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType *)
-  (* | Or (e1, e2) -> typechecker_aux e1 e2 BoolType BoolType *)
   | Not (e1) -> typechecker e1 env
   | Let (binds, e) ->
      let rec add_to_env (bindings : (string * exp * string option) list) (n_env : typ environment option) =
@@ -116,7 +99,10 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
      res
   (* | _ -> NoneType *)
   | New(e) ->  RefType(typechecker e env)
-  | Deref(e) -> typechecker e env
+  | Deref(e) ->
+     (match typechecker e env with
+      | RefType r -> r
+      | _ -> NoneType)
   | Assign(id,e) -> if (Env.find !env id) = NoneType then NoneType else
                       if (typechecker e env) = NoneType then NoneType else
                         UnitType
