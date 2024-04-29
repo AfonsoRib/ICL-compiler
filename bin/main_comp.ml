@@ -1,18 +1,18 @@
 open Icl
 
 let footer = "
-invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
 return
 .end method
 "
 
 let printType t =
-  match t with
+  (match t with
   | Typechecker.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
   | Typechecker.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
   | Typechecker.UnitType | Typechecker.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
   | Typechecker.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
-  | _ -> "; not implemented"
+  | _ -> "; not implemented")
+  ^ "\ninvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V"
 
 let preamble =
 ".class public Demo
@@ -44,8 +44,9 @@ let main =
     let res = Comp.comp ast in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
-    output_string outchannel (printType typecheck);
-    output_string outchannel footer;
+    if typecheck != Typechecker.UnitType then
+      output_string outchannel (printType typecheck);
+    output_string outchannel footer
   with | Failure msg -> print_endline msg
        | _ -> print_endline "Syntax error!"
 
