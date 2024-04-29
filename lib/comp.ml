@@ -11,7 +11,10 @@ type jvm =
   | Iadd 
   | Isub 
   | Imul 
-  | Idiv 
+  | Idiv
+  | Iand
+  | Ior
+  | Ixor
   | If_icmpeq of string
   | If_icmpne of string
   | If_icmpge of string
@@ -33,6 +36,9 @@ let rec jvmString = function
   | Isub -> "isub"
   | Imul -> "imul"
   | Idiv -> "idiv"
+  | Iand -> "iand"
+  | Ior -> "ior"
+  | Ixor -> "ixor"
   | If_icmpeq label -> "if_icmpeq " ^ label
   | If_icmpne label -> "if_icmpne " ^ label
   | If_icmpge label -> "if_icmpge " ^ label
@@ -75,4 +81,7 @@ let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   | Gt (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
                    let l2 = "L" ^ (string_of_int (gen_number ())) in
                    comp e1 @ comp e2 @ [If_icmple l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
+  | And(e1, e2) -> comp e1 @ comp e2 @ [Iand]
+  | Or(e1, e2) -> comp e1 @ comp e2 @ [Ior]
+  | Not(e) -> comp e @ [Sipush 1; Ixor]
   | _ -> [Nop]
