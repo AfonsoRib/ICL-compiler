@@ -1,12 +1,21 @@
 open Icl
 
-let footer = "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;
+let footer = "
 invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
 return
 .end method
 "
 
-let preamble = ".class public Demo
+let printType t =
+  match t with
+  | Typechecker.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
+  | Typechecker.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
+  | Typechecker.UnitType | Typechecker.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
+  | Typechecker.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
+  | _ -> "; not implemented"
+
+let preamble =
+".class public Demo
 .super java/lang/Object
 .method public <init>()V
    aload_0
@@ -22,7 +31,7 @@ getstatic java/lang/System/out Ljava/io/PrintStream;
 "
 
 
-let main2 =
+let main =
   let filename = "test.txt" in (* Specify your input file name here *)
   let channel = open_in filename in
   let outputname = "jasmin.j" in
@@ -35,11 +44,10 @@ let main2 =
     let res = Comp.comp ast in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
+    output_string outchannel (printType typecheck);
     output_string outchannel footer;
   with | Failure msg -> print_endline msg
        | _ -> print_endline "Syntax error!"
 
-
-
 let () =
-  main2
+  main

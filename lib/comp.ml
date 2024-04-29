@@ -7,6 +7,8 @@ let gen_number () =
   counter := fresh_number + 1;
   fresh_number
 
+let gen_label () = "L" ^ (string_of_int (gen_number ()))
+  
 type jvm =
   | Iadd 
   | Isub 
@@ -29,6 +31,7 @@ type jvm =
   | Label of string * jvm
   | Nop
   | Goto of string
+  | Ldc of string
  
 
 let rec jvmString = function
@@ -52,8 +55,8 @@ let rec jvmString = function
   | Istore_1 -> "istore_1"
   | Label (label,inst) ->  label ^ ":\n" ^ (jvmString inst)
   | Goto label -> "goto " ^ label
+  | Ldc str -> "ldc \"" ^ str ^ "\""
   | Nop -> "nop"
-
 
 let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   match expression with
@@ -63,25 +66,39 @@ let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   | Mult (e1, e2) -> comp e1 @ comp e2 @ [Imul]
   | Sub (e1, e2) -> comp e1 @ comp e2 @ [Isub]
   | Div (e1, e2) -> comp e1 @ comp e2 @ [Idiv]
-  | Eq (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Eq (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpne l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
-  | Ne (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Ne (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpeq l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
-  | Le (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Le (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpgt l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
-  | Ge (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Ge (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmplt l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
-  | Lt (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Lt (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpge l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
-  | Gt (e1, e2) -> let l1 = "L" ^ (string_of_int (gen_number ())) in
-                   let l2 = "L" ^ (string_of_int (gen_number ())) in
+  | Gt (e1, e2) -> let l1 = gen_label () in
+                   let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmple l1 ; Sipush 1; Goto l2; Label (l1,Sipush 0); Label (l2, Nop)]
   | And(e1, e2) -> comp e1 @ comp e2 @ [Iand]
   | Or(e1, e2) -> comp e1 @ comp e2 @ [Ior]
   | Not(e) -> comp e @ [Sipush 1; Ixor]
+  | IfThenElse(e1,e2,e3) -> let c1 = comp e1 and
+                                c2 = comp e2 and
+                                c3 = comp e3 and
+                                l1 = gen_label () and
+                                l2 = gen_label ()
+                            in
+                            c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label (l1,Nop)] @ c3 @ [Label (l2, Nop)]
+  | IfThen(e1,e2) -> let c1 = comp e1 and
+                         c2 = comp e2 and
+                         l1 = gen_label () and
+                         l2 = gen_label ()
+                     in
+                     c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label (l1,Nop); Ldc "()"; Label (l2, Nop)]
+  | UnitExp -> [Ldc "()"]
   | _ -> [Nop]
