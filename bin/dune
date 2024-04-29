@@ -3,3 +3,10 @@
  (modules main)
  (name main)
  (libraries icl))
+
+(executable
+ (public_name icl2)
+ (modules main_comp)
+ (name main_comp)
+ (libraries icl))
+
