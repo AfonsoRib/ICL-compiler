@@ -71,6 +71,15 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | _ -> failwith "Can only apply not to boolean"
   in
   let boolean_operation f x y =
+    (*
+    let ex = eval x env in
+      match (ex, f) with
+      | (Bool false, (&&)) -> f ex ex
+      | (Bool true, (||)) -> f ex ex
+      | (Bool b1, _) ->
+        match (eval y env) with
+        | Bool b2 -> f b1 b2)
+        *)
     match (x,y) with
     | (Bool b1, Bool b2) -> f b1 b2
     | _ -> failwith "Can only apply boolean operation to booleans"
@@ -107,8 +116,10 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Ge (e1, e2) -> Bool(inequality_operation (>=) (eval e1 env) (eval e2 env))
   | Lt (e1, e2) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
   | Gt (e1, e2) -> Bool(inequality_operation (>) (eval e1 env) (eval e2 env))
-  | And (e1,e2) -> Bool(boolean_operation (&&) (eval e1 env) (eval e2 env))
-  | Or (e1,e2) -> Bool(boolean_operation (||) (eval e1 env) (eval e2 env))
+  | And (e1,e2) -> let ex = eval e1 env in
+                    if ex = Bool false then ex else Bool(boolean_operation (&&) ex (eval e2 env))
+  | Or (e1,e2) -> let ex = eval e1 env in
+                  if ex = Bool true then ex else Bool(boolean_operation (&&) ex (eval e2 env))
   | Not (e1) -> Bool(not_operation (not) (eval e1 env))
   | Let (binds, e) ->
      let rec add_to_env (bindings : (string * exp * string option) list) (n_env : eval_result environment option) =

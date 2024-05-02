@@ -1,7 +1,7 @@
 type 'a environment = {
     table : (string, 'a) Hashtbl.t;
     prev : 'a environment option;
-  }
+}
 
 
 let create_environment (prev : 'a environment option) = { table = Hashtbl.create 10; prev }

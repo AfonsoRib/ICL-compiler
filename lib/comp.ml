@@ -11,9 +11,9 @@ let gen_number_label () =
 let gen_label () = "L" ^ (string_of_int (gen_number_label ()))
 
 type jvm =
-  | Iadd 
-  | Isub 
-  | Imul 
+  | Iadd
+  | Isub
+  | Imul
   | Idiv
   | Iand
   | Ior
@@ -73,12 +73,12 @@ let jvmString i =
   | Putfield(var,t) -> "putfield " ^ var ^ " " ^ t
          )
 
-
 let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   match expression with
   | Fact n -> [Sipush n]
   | Statement b -> if b then [Sipush 1] else [Sipush 0]
   | Id _ -> [Nop]
+  | String s -> [Ldc s]
   | Add (e1, e2) -> comp e1 @ comp e2 @ [Iadd]
   | Mult (e1, e2) -> comp e1 @ comp e2 @ [Imul]
   | Sub (e1, e2) -> comp e1 @ comp e2 @ [Isub]
@@ -121,7 +121,6 @@ let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   (*     Frame.gen_class *)
   (*     (\*make frame file*\) *)
 
-  | String(s) -> [Ldc s]
   | UnitExp -> [Nop]
 
   | _ -> [Nop]
