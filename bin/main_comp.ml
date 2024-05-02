@@ -1,33 +1,33 @@
 open Icl
 
 let footer = "
-return
+\treturn
 .end method
 "
 
 let printType t =
-  (match t with
+  "\t" ^ (match t with
   | Typechecker.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
   | Typechecker.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
   | Typechecker.UnitType | Typechecker.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
   | Typechecker.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
   | _ -> "; not implemented")
-  ^ "\ninvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V"
+  ^ "\n\tinvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V"
 
 let preamble =
 ".class public Demo
 .super java/lang/Object
 .method public <init>()V
-   aload_0
-   invokenonvirtual java/lang/Object/<init>()V
-   return
+\taload_0
+\tinvokenonvirtual java/lang/Object/<init>()V
+\treturn
 .end method
 .method public static main([Ljava/lang/String;)V
- .limit locals 10
- .limit stack 256
- ; setup local variables:
- ;    1 - the PrintStream object held in java.lang.out
-getstatic java/lang/System/out Ljava/io/PrintStream;
+\t.limit locals 10
+\t.limit stack 256
+\t; setup local variables:
+\t;    1 - the PrintStream object held in java.lang.out
+\tgetstatic java/lang/System/out Ljava/io/PrintStream;
 "
 
 
