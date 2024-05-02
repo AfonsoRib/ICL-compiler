@@ -2,8 +2,7 @@ open Ast
 open Env
 open Types
 
-let rec typ_str typs =
-  let typ_list = List.rev typs in
+let rec typ_str typ_list =
   match typ_list with
   | [] -> failwith "no such type"
   | [t] -> (match t with
@@ -14,7 +13,7 @@ let rec typ_str typs =
             | "string" -> StringType
             | _  -> failwith "no such type ")
   | t::ts -> (match t with
-              | "ref" -> RefType(typ_str  (List.rev ts))
+              | "ref" -> RefType(typ_str ts)
               | _ -> failwith "no such type")
 
 let rec str_typ = function

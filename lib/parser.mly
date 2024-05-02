@@ -149,4 +149,4 @@ binding:
   | id=ID EQ e=exp
     { (id, e, None) }
   | id=ID COLON type_refs_list EQ  e=exp
-    { (id, e, Some (Typechecker.typ_str $3)) }
+    { (id, e, Some ( Typechecker.typ_str (List.rev $3))) }
