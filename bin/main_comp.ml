@@ -7,10 +7,10 @@ let footer = "
 
 let printType t =
   "\t" ^ (match t with
-  | Typechecker.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
-  | Typechecker.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
-  | Typechecker.UnitType | Typechecker.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
-  | Typechecker.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
+  | Types.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
+  | Types.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
+  | Types.UnitType | Types.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
+  | Types.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
   | _ -> "; not implemented")
   ^ "\n\tinvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V"
 
@@ -40,11 +40,11 @@ let main =
     let lexbuf = Lexing.from_channel channel in
     let ast = Parser.start Lexer.token lexbuf in
     let typecheck = Typechecker.typechecker ast (ref None) in
-    if typecheck = Typechecker.NoneType then failwith "Failed typechecker pass. Expression type: None";
+    if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
     let res = Comp.comp ast in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
-    if typecheck != Typechecker.UnitType then
+    if typecheck != Types.UnitType then
       output_string outchannel (printType typecheck);
     output_string outchannel footer
   with | Failure msg -> print_endline msg

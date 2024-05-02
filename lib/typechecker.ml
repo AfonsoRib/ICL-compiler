@@ -1,17 +1,9 @@
 open Ast
 open Env
+open Types
 
-type typ=
-  | IntType
-  | FloatType
-  | BoolType
-  | UnitType
-  | RefType of typ
-  | NoneType
-  | StringType
-
-let rec typ_str typ_string =
-  let typ_list = List.rev (String.split_on_char ' ' typ_string) in
+let rec typ_str typs =
+  let typ_list = List.rev typs in
   match typ_list with
   | [] -> failwith "no such type"
   | [t] -> (match t with
@@ -22,7 +14,7 @@ let rec typ_str typ_string =
             | "string" -> StringType
             | _  -> failwith "no such type ")
   | t::ts -> (match t with
-              | "ref" -> RefType(typ_str (String.concat " " (List.rev ts)))
+              | "ref" -> RefType(typ_str  (List.rev ts))
               | _ -> failwith "no such type")
 
 let rec str_typ = function
@@ -70,14 +62,13 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
       | _ -> NoneType)
   | Not (e1) -> typechecker e1 env
   | Let (binds, e) ->
-     let rec add_to_env (bindings : (string * exp * string option) list) (n_env : typ environment option) =
+     let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : typ environment option) =
        match bindings with
        | [] -> ()
        | (id, e1, t1)::rest -> let v = (typechecker e1 (ref n_env)) in
                                (match t1 with
                                 | Some t ->
-                                   let typ = typ_str t in
-                                   if (typ <> v) then
+                                   if (t <> v) then
                                      failwith ("for id \"" ^ id ^ "\" types don't match")
                                    else
                                      (Env.bind n_env id v;

@@ -5,7 +5,7 @@ let eval_string input =
   let lexbuf = Lexing.from_string input in
   let ast = Parser.start Lexer.token lexbuf in
   let typecheck = Typechecker.typechecker ast (ref None) in
-  if typecheck = Typechecker.NoneType then failwith "Failed typechecker pass. Expression type: None";
+  if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
   Ast.eval ast (ref None)
 
 let test_eval_string input expected_output _ =
