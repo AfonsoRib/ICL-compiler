@@ -2,35 +2,35 @@ open Env
 open Types
 
 type exp =
-  |Add of exp * exp
-  |Sub of exp * exp
-  |Mult of exp * exp
-  |Div of exp * exp
-  |Fact of int
-  |FloatFact of float
-  |Eq of exp * exp
-  |Ne of exp * exp
-  |Le of exp * exp
-  |Ge of exp * exp
-  |Lt of exp * exp
-  |Gt of exp * exp
-  |And of exp * exp
-  |Or of exp * exp
-  |Not of exp
-  |Statement of bool
-  |Let of (string * exp * typ option) list * exp
-  |Id of string
-  |New of exp
-  |Deref of exp
-  |Assign of string * exp
-  |While of exp * exp
-  |IfThenElse of exp * exp * exp
-  |IfThen of exp * exp
-  |PrintLn of exp
-  |Print of exp
-  |Seq of exp * exp
-  |UnitExp
-  |String of string
+  |Add of exp * exp * typ
+  |Sub of exp * exp * typ
+  |Mult of exp * exp * typ
+  |Div of exp * exp * typ
+  |Fact of int * typ
+  |FloatFact of float * typ
+  |Eq of exp * exp * typ
+  |Ne of exp * exp * typ
+  |Le of exp * exp * typ
+  |Ge of exp * exp * typ
+  |Lt of exp * exp * typ
+  |Gt of exp * exp * typ
+  |And of exp * exp * typ
+  |Or of exp * exp * typ
+  |Not of exp * typ
+  |Statement of bool * typ
+  |Let of (string * exp * typ option) list * exp * typ
+  |Id of string * typ
+  |New of exp * typ
+  |Deref of exp * typ
+  |Assign of string * exp * typ
+  |While of exp * exp * typ
+  |IfThenElse of exp * exp * exp * typ
+  |IfThen of exp * exp * typ
+  |PrintLn of exp * typ
+  |Print of exp * typ
+  |Seq of exp * exp * typ
+  |UnitExp of typ
+  |String of string * typ
 
 type eval_result =
   | Int of int
@@ -94,24 +94,24 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | _ -> failwith "Type mismatch"
   in
   match expr with
-  | Fact n ->  Int n
-  | FloatFact f -> Float f
-  | Statement b -> Bool b
-  | Id x -> Env.find !env x
-  | Add (e1, e2) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
-  | Mult (e1, e2) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
-  | Sub (e1, e2) -> (arythmetic_operation (-) (-.) (eval e1 env) (eval e2 env))
-  | Div (e1, e2) -> (arythmetic_operation (/) ( /. ) (eval e1 env) (eval e2 env))
-  | Eq (e1, e2) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
-  | Ne (e1, e2) -> Bool(inequality_operation (<>) (eval e1 env) (eval e2 env))
-  | Le (e1, e2) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))
-  | Ge (e1, e2) -> Bool(inequality_operation (>=) (eval e1 env) (eval e2 env))
-  | Lt (e1, e2) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
-  | Gt (e1, e2) -> Bool(inequality_operation (>) (eval e1 env) (eval e2 env))
-  | And (e1,e2) -> Bool(boolean_operation (&&) (eval e1 env) (eval e2 env))
-  | Or (e1,e2) -> Bool(boolean_operation (||) (eval e1 env) (eval e2 env))
-  | Not (e1) -> Bool(not_operation (not) (eval e1 env))
-  | Let (binds, e) ->
+  | Fact (n, _) ->  Int n
+  | FloatFact (f, _) -> Float f
+  | Statement (b, _) -> Bool b
+  | Id (x, _) -> Env.find !env x
+  | Add (e1, e2, _) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
+  | Mult (e1, e2, _) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
+  | Sub (e1, e2, _) -> (arythmetic_operation (-) (-.) (eval e1 env) (eval e2 env))
+  | Div (e1, e2, _) -> (arythmetic_operation (/) ( /. ) (eval e1 env) (eval e2 env))
+  | Eq (e1, e2, _) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
+  | Ne (e1, e2, _) -> Bool(inequality_operation (<>) (eval e1 env) (eval e2 env))
+  | Le (e1, e2, _) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))
+  | Ge (e1, e2, _) -> Bool(inequality_operation (>=) (eval e1 env) (eval e2 env))
+  | Lt (e1, e2, _) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
+  | Gt (e1, e2, _) -> Bool(inequality_operation (>) (eval e1 env) (eval e2 env))
+  | And (e1,e2, _) -> Bool(boolean_operation (&&) (eval e1 env) (eval e2 env))
+  | Or (e1,e2, _) -> Bool(boolean_operation (||) (eval e1 env) (eval e2 env))
+  | Not (e1, _) -> Bool(not_operation (not) (eval e1 env))
+  | Let (binds, e, _) ->
      let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : eval_result environment option) =
        match bindings with
        | [] -> ()
@@ -124,29 +124,29 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
      let res = eval e env in
      env := Env.end_scope !env;
      res
-  | New(e) -> Ref(ref (eval e env))
-  | Deref(e) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
-  | Assign(x, e) ->
+  | New(e, _) -> Ref(ref (eval e env))
+  | Deref(e, _) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
+  | Assign(x, e, _) ->
      let ref_result = Env.find !env x and
          value_to_assign = eval e env in
      (match ref_result with
       | Ref r -> r := value_to_assign
       | _ -> failwith "Left-hand side of assignment must be a reference")
      ; Unit
-  | While(e1,e2) -> while (match (eval e1 env) with Bool b -> b | _ -> failwith "not a boolean") do
+  | While(e1,e2, _) -> while (match (eval e1 env) with Bool b -> b | _ -> failwith "not a boolean") do
                      ignore(eval e2 env)
                     done;
                     Unit
-  | PrintLn(e) -> print_endline (string_of_eval_result_clean (eval e env));
+  | PrintLn(e, _) -> print_endline (string_of_eval_result_clean (eval e env));
                   Unit
-  | Print(e) -> print_string (string_of_eval_result_clean (eval e env));
+  | Print(e, _) -> print_string (string_of_eval_result_clean (eval e env));
                 Unit
-  | Seq(e1,e2) -> ignore(eval e1 env); eval e2 env
-  | IfThenElse(e1,e2,e3) -> (match (eval e1 env) with
+  | Seq(e1,e2, _) -> ignore(eval e1 env); eval e2 env
+  | IfThenElse(e1,e2,e3, _) -> (match (eval e1 env) with
                   | Bool b -> if b then eval e2 env else eval e3 env
                   | _ -> failwith "not a boolean")
-  | IfThen(e1,e2) -> (match (eval e1 env) with
+  | IfThen(e1,e2, _ ) -> (match (eval e1 env) with
                   | Bool b -> if b then eval e2 env else Unit
                   | _ -> failwith "not a boolean")
-  | UnitExp -> Unit
-  | String(s) -> Str s
+  | UnitExp _ -> Unit
+  | String(s, _) -> Str s

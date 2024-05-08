@@ -27,11 +27,11 @@ let rec str_typ = function
 
 let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
   match e with
-  | Fact _ ->  IntType
-  | FloatFact _ -> FloatType
-  | Statement _ -> BoolType
-  | Id x -> Env.find !env x
-  | Add (e1, e2) | Mult (e1, e2) | Sub (e1, e2) | Div (e1, e2) ->
+  | Fact (_) ->  IntType
+  | FloatFact (_) -> FloatType
+  | Statement (_) -> BoolType
+  | Id (x, _) -> Env.find !env x
+  | Add (e1, e2, _) | Mult (e1, e2,_) | Sub (e1, e2,_) | Div (e1, e2,_) ->
      let t1 = (typechecker e1 env) and
          t2 = typechecker e2 env
      in
@@ -41,7 +41,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
      | (FloatType, IntType) -> FloatType
      | (FloatType, FloatType) -> FloatType
      | _ -> NoneType)
-  | Ne (e1, e2)| Le (e1, e2)| Ge (e1, e2)| Lt (e1, e2)| Gt (e1, e2) | Eq (e1, e2) ->
+  | Ne (e1, e2, _)| Le (e1, e2, _)| Ge (e1, e2, _)| Lt (e1, e2, _)| Gt (e1, e2, _) | Eq (e1, e2, _) ->
      let rec aux t1 t2 =
        (match (t1,t2) with
         | (IntType, IntType) | (FloatType, FloatType) | (StringType, StringType) | (BoolType,BoolType) -> BoolType
@@ -52,15 +52,15 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
          t2 = typechecker e2 env
      in
      aux t1 t2
-  | And (e1, e2) | Or (e1, e2) ->
+  | And (e1, e2, _) | Or (e1, e2, _) ->
      let t1 = typechecker e1 env and
          t2 = typechecker e2 env
      in
      (match (t1, t2) with
       | (BoolType, BoolType) -> BoolType
       | _ -> NoneType)
-  | Not (e1) -> typechecker e1 env
-  | Let (binds, e) ->
+  | Not (e1,_) -> typechecker e1 env
+  | Let (binds, e, _) ->
      let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : typ environment option) =
        match bindings with
        | [] -> ()
@@ -82,20 +82,20 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
      let res = typechecker e env in
      env := Env.end_scope !env;
      res
-  | New(e) ->  RefType(typechecker e env)
-  | Deref(e) ->
+  | New(e,_) ->  RefType(typechecker e env)
+  | Deref(e,_) ->
      (match typechecker e env with
       | RefType r -> r
       | _ -> NoneType)
-  | Assign(id,e) -> if (Env.find !env id) = NoneType then NoneType else
+  | Assign(id,e,_) -> if (Env.find !env id) = NoneType then NoneType else
                       if (typechecker e env) = NoneType then NoneType else
                         UnitType
-  | While (e1,e2) -> let t1 =  (typechecker e1 env) and
+  | While (e1,e2,_) -> let t1 =  (typechecker e1 env) and
                          t2 =  (typechecker e2 env) in
                      if t1 != BoolType then NoneType else
                        if t2 = NoneType then NoneType else
                          UnitType
-  | IfThenElse (e1,e2,e3) -> let t1 = (typechecker e1 env) and
+  | IfThenElse (e1,e2,e3,_) -> let t1 = (typechecker e1 env) and
                                  t2 = (typechecker e2 env) and
                                  t3 = (typechecker e3 env)
                              in
@@ -103,20 +103,20 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
                                if t2 = NoneType then NoneType else
                                  if t3 = NoneType then NoneType else
                                    if t2 = t3 then t2 else NoneType
-  | IfThen (e1,e2) -> let t1 = (typechecker e1 env) and
+  | IfThen (e1,e2,_) -> let t1 = (typechecker e1 env) and
                           t2 = (typechecker e2 env)
                       in
                       if t1 != BoolType then NoneType else
                         if t2 != UnitType then NoneType else
                           t2
-  | Seq(e1,e2) -> let e1type = typechecker e1 env in
+  | Seq(e1,e2,_) -> let e1type = typechecker e1 env in
                   let e2type = typechecker e2 env in
                   if e1type = NoneType then NoneType else
                     if e2type = NoneType then NoneType else
                       e2type
-  | PrintLn(e) -> if (typechecker e env) = NoneType then NoneType else
+  | PrintLn(e,_) -> if (typechecker e env) = NoneType then NoneType else
                     UnitType
-  | Print(e) -> if (typechecker e env) = NoneType then NoneType else
+  | Print(e,_) -> if (typechecker e env) = NoneType then NoneType else
                   UnitType
-  | UnitExp -> UnitType
-  | String(_) -> StringType
+  | UnitExp _-> UnitType
+  | String(_,_) -> StringType

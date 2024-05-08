@@ -76,42 +76,42 @@ let jvmString i =
 
 let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   match expression with
-  | Fact n -> [Sipush n]
-  | Statement b -> if b then [Sipush 1] else [Sipush 0]
-  | Id _ -> [Nop]
-  | Add (e1, e2) -> comp e1 @ comp e2 @ [Iadd]
-  | Mult (e1, e2) -> comp e1 @ comp e2 @ [Imul]
-  | Sub (e1, e2) -> comp e1 @ comp e2 @ [Isub]
-  | Div (e1, e2) -> comp e1 @ comp e2 @ [Idiv]
-  | Eq (e1, e2) -> let l1 = gen_label () in
+  | Fact (n, _) -> [Sipush n]
+  | Statement (b, _) -> if b then [Sipush 1] else [Sipush 0]
+  | Id (_, _) -> [Nop]
+  | Add (e1, e2, _) -> comp e1 @ comp e2 @ [Iadd]
+  | Mult (e1, e2, _) -> comp e1 @ comp e2 @ [Imul]
+  | Sub (e1, e2, _) -> comp e1 @ comp e2 @ [Isub]
+  | Div (e1, e2, _) -> comp e1 @ comp e2 @ [Idiv]
+  | Eq (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpne l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | Ne (e1, e2) -> let l1 = gen_label () in
+  | Ne (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpeq l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | Le (e1, e2) -> let l1 = gen_label () in
+  | Le (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpgt l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | Ge (e1, e2) -> let l1 = gen_label () in
+  | Ge (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmplt l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | Lt (e1, e2) -> let l1 = gen_label () in
+  | Lt (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmpge l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | Gt (e1, e2) -> let l1 = gen_label () in
+  | Gt (e1, e2, _) -> let l1 = gen_label () in
                    let l2 = gen_label () in
                    comp e1 @ comp e2 @ [If_icmple l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]
-  | And(e1, e2) -> comp e1 @ comp e2 @ [Iand]
-  | Or(e1, e2) -> comp e1 @ comp e2 @ [Ior]
-  | Not(e) -> comp e @ [Sipush 1; Ixor]
-  | IfThenElse(e1,e2,e3) -> let c1 = comp e1 and
+  | And(e1, e2, _) -> comp e1 @ comp e2 @ [Iand]
+  | Or(e1, e2, _) -> comp e1 @ comp e2 @ [Ior]
+  | Not(e, _) -> comp e @ [Sipush 1; Ixor]
+  | IfThenElse(e1,e2,e3,_) -> let c1 = comp e1 and
                                 c2 = comp e2 and
                                 c3 = comp e3 and
                                 l1 = gen_label () and
                                 l2 = gen_label ()
                             in
                             c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop] @ c3 @ [Label l2; Nop]
-  | IfThen(e1,e2) -> let c1 = comp e1 and
+  | IfThen(e1,e2,_) -> let c1 = comp e1 and
                          c2 = comp e2 and
                          l1 = gen_label () and
                          l2 = gen_label ()
@@ -121,7 +121,6 @@ let rec comp (expression : exp) (* (environment : env) *) : jvm list =
   (*     Frame.gen_class *)
   (*     (\*make frame file*\) *)
 
-  | String(s) -> [Ldc s]
-  | UnitExp -> [Nop]
-
+  | String(s, _) -> [Ldc s]
+  | UnitExp _ -> [Nop]
   | _ -> [Nop]
