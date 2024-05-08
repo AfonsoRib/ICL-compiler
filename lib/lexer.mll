@@ -44,6 +44,8 @@ rule token = parse
   |"end" { END }
   |"println" { PRINTLN }
   |"print" { PRINT }
+  |"fun" { FUN }
+  |"->" { ARROW }
   |';' { SEMICOLON }
   |':' { COLON }
   |"()"{ UNIT }

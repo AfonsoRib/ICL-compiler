@@ -35,6 +35,8 @@
 %token SEMICOLON
 %token UNIT
 %token COLON
+%token FUN
+%token ARROW
 %token<string> TYPE
 %type <string list> type_refs_list
 
@@ -112,6 +114,8 @@ exp:
     { Not(e1, Types.NoneType) }
   | LET bindings=let_bindings IN e=exp
     { Let(bindings, e, Types.NoneType) }
+  | FUN id=ID ARROW e=exp
+      { Fun(id, e, Types.NoneType) }
   | NEW e=exp
     { New(e, Types.NoneType) }
   | id=ID ASSIGN e=exp

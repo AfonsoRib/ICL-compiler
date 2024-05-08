@@ -52,7 +52,8 @@ let suite =
     "test logical and true">::test_eval_string "true && true\n" (Ast.Bool true);
     "test logical and false">::test_eval_string "true && false\n" (Ast.Bool false);
     "test logical or true">::test_eval_string "true || true\n" (Ast.Bool true);
-    "test logical or false">::test_eval_string "true || false\n" (Ast.Bool true);
+    "test logical or true false">::test_eval_string "true || false\n" (Ast.Bool true);
+    "test logical or false false">::test_eval_string "false || false\n" (Ast.Bool false);
     "test logical not true">::test_eval_string "~true\n" (Ast.Bool false);
     "test logical not false">::test_eval_string "~false\n" (Ast.Bool true);
     "test let integer">::test_eval_string "let x = 1 in x\n" (Ast.Int 1);

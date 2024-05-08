@@ -6,3 +6,4 @@ type typ=
   | RefType of typ
   | NoneType
   | StringType
+  | FunType of typ * typ

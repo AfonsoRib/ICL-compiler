@@ -19,6 +19,8 @@ type exp =
   |Not of exp * typ
   |Statement of bool * typ
   |Let of (string * exp * typ option) list * exp * typ
+  |Fun of string * exp * typ
+  |App of exp * exp * typ
   |Id of string * typ
   |New of exp * typ
   |Deref of exp * typ
@@ -38,6 +40,7 @@ type eval_result =
   | Bool of bool
   | Ref of eval_result ref
   | Str of string
+  | Closure of string * exp * eval_result environment ref
   | Unit
 
 let rec string_of_eval_result = function
@@ -47,6 +50,7 @@ let rec string_of_eval_result = function
   | Unit -> "Unit"
   | Ref r ->  (string_of_eval_result !r ) ^ " ref"
   | Str s -> "String " ^ s
+  | Closure (x, e, env) -> "Closure (" ^ x ^ ", " ^ (string_of_exp e) ^ ", " ^ (string_of_env !env) ^ ")"
 
 let rec string_of_ref t contents_start contents_end typ =
   match t with
@@ -56,6 +60,7 @@ let rec string_of_ref t contents_start contents_end typ =
   | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
   | Float f -> "float" ^ typ ^ " = " ^ contents_start ^ string_of_float f ^ contents_end
   | Str s -> "string" ^ typ ^ " = " ^ contents_start ^ s ^ contents_end
+  | Closure (x, e, env) -> "Closure (" ^ x ^ ", " ^ (string_of_exp e) ^ ", " ^ (string_of_env !env) ^ ")" ^ typ
 
 let rec string_of_eval_result_clean = function
   | Int n -> string_of_int n
@@ -72,15 +77,6 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | _ -> failwith "Can only apply not to boolean"
   in
   let boolean_operation f x y =
-    (*
-    let ex = eval x env in
-      match (ex, f) with
-      | (Bool false, (&&)) -> f ex ex
-      | (Bool true, (||)) -> f ex ex
-      | (Bool b1, _) ->
-        match (eval y env) with
-        | Bool b2 -> f b1 b2)
-        *)
     match (x,y) with
     | (Bool b1, Bool b2) -> f b1 b2
     | _ -> failwith "Can only apply boolean operation to booleans"
@@ -106,6 +102,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Fact (n, _) ->  Int n
   | FloatFact (f, _) -> Float f
   | Statement (b, _) -> Bool b
+  | Fun (x, e, _) -> Closure (x, e, ref (Env.empty))
   | Id (x, _) -> Env.find !env x
   | Add (e1, e2, _) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
   | Mult (e1, e2, _) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
@@ -127,7 +124,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
        match bindings with
        | [] -> ()
        | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in
-                           Env.bind n_env id v;
+                           §Env.bind n_env id v;
                            add_to_env rest n_env
      in
      env := Env.begin_scope !env;
@@ -135,6 +132,19 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
      let res = eval e env in
      env := Env.end_scope !env;
      res
+  | App (e1, e2, _) -> let v1 = eval e1 env in
+                        let v2 = eval e2 env in
+                         if v1 = Closure (x, body, env') then
+                          begin
+                            env := Env.begin_scope !env;
+                            Env.bind env' x v2;
+                            let res = eval body (ref env) in
+                            env := Env.end_scope !env;
+                            res
+                          end
+                        else
+                         failwith "Not a closure")
+
   | New(e, _) -> Ref(ref (eval e env))
   | Deref(e, _) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
   | Assign(x, e, _) ->
