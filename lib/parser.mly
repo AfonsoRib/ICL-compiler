@@ -68,70 +68,70 @@ start:
 
 exp:
   | TRUE
-    { Statement(true) }
+    { Statement(true, Types.NoneType) }
   | FALSE
-    { Statement(false) }
+    { Statement(false, Types.NoneType) }
   | n = NUM
     { if String.contains n '.'
-      then FloatFact(float_of_string n)
-      else Fact(int_of_string n)
+      then FloatFact(float_of_string n, Types.NoneType)
+      else Fact(int_of_string n, Types.NoneType)
     }
   | id=ID
-    { Id(id) }
+    { Id(id, Types.NoneType) }
   | e1=exp SEMICOLON e2=exp
-    { Seq(e1,e2) }
+    { Seq(e1,e2,Types.NoneType) }
   | e1=exp PLUS e2=exp
-    { Add(e1, e2) }
+    { Add(e1, e2, Types.NoneType) }
   | e1=exp MULT e2=exp
-    { Mult(e1, e2) }
+    { Mult(e1, e2, Types.NoneType) }
   | e1=exp MINUS e2=exp
-    { Sub(e1, e2) }
+    { Sub(e1, e2, Types.NoneType) }
   | e1=exp DIV e2=exp
-    { Div(e1, e2) }
+    { Div(e1, e2, Types.NoneType) }
   | e1=exp EQ e2=exp
-    { Eq(e1, e2) }
+    { Eq(e1, e2, Types.NoneType) }
   | e1=exp NE e2=exp
-    { Ne(e1, e2) }
+    { Ne(e1, e2, Types.NoneType) }
   | e1=exp GE e2=exp
-    { Ge(e1, e2) }
+    { Ge(e1, e2, Types.NoneType) }
   | e1=exp LE e2=exp
-    { Le(e1, e2) }
+    { Le(e1, e2, Types.NoneType) }
   | e1=exp GT e2=exp
-    { Gt(e1, e2) }
+    { Gt(e1, e2, Types.NoneType) }
   | e1=exp LT e2=exp
-    { Lt(e1, e2) }
+    { Lt(e1, e2, Types.NoneType) }
   | MINUS n=NUM
-    { Fact( - (int_of_string n)) }
+    { Fact( - (int_of_string n), Types.NoneType) }
   | LPAR e=exp RPAR
     { e }
   | e1=exp AND e2=exp
-    { And(e1, e2) }
+    { And(e1, e2, Types.NoneType) }
   | e1=exp OR e2=exp
-    { Or(e1, e2) }
+    { Or(e1, e2, Types.NoneType) }
   | NOT e1=exp
-    { Not(e1) }
+    { Not(e1, Types.NoneType) }
   | LET bindings=let_bindings IN e=exp
-    { Let(bindings, e) }
+    { Let(bindings, e, Types.NoneType) }
   | NEW e=exp
-    { New(e) }
+    { New(e, Types.NoneType) }
   | id=ID ASSIGN e=exp
-    { Assign(id, e) }
+    { Assign(id, e, Types.NoneType) }
   | DEREF e=exp
-    { Deref(e) }
+    { Deref(e, Types.NoneType) }
   | IF e1=exp THEN e2=exp ELSE e3=exp END
-    { IfThenElse(e1,e2,e3) }
+    { IfThenElse(e1,e2,e3, Types.NoneType) }
   | IF e1=exp THEN e2=exp END
-    { IfThen(e1,e2) }
+    { IfThen(e1,e2, Types.NoneType) }
   | WHILE e1=exp DO e2=exp END
-    { While(e1,e2)}
+    { While(e1,e2, Types.NoneType)}
   | PRINTLN e=exp
-    { PrintLn(e) }
+    { PrintLn(e, Types.NoneType) }
   | PRINT e=exp
-    { Print(e) }
+    { Print(e, Types.NoneType) }
   | UNIT
-    { UnitExp }
+    { UnitExp(Types.NoneType) }
   | s=STRING
-    {String s}
+    {String(s, Types.NoneType)}
 
 type_refs_list:
     | TYPE
