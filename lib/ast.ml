@@ -1,4 +1,5 @@
 open Env
+open Types
 
 type exp =
   |Add of exp * exp
@@ -17,7 +18,7 @@ type exp =
   |Or of exp * exp
   |Not of exp
   |Statement of bool
-  |Let of (string * exp * string option) list * exp
+  |Let of (string * exp * typ option) list * exp
   |Id of string
   |New of exp
   |Deref of exp
@@ -122,7 +123,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
                   if ex = Bool true then ex else Bool(boolean_operation (&&) ex (eval e2 env))
   | Not (e1) -> Bool(not_operation (not) (eval e1 env))
   | Let (binds, e) ->
-     let rec add_to_env (bindings : (string * exp * string option) list) (n_env : eval_result environment option) =
+     let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : eval_result environment option) =
        match bindings with
        | [] -> ()
        | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in

@@ -1,0 +1,8 @@
+type typ=
+  | IntType
+  | FloatType
+  | BoolType
+  | UnitType
+  | RefType of typ
+  | NoneType
+  | StringType
