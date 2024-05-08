@@ -39,7 +39,7 @@ let main =
   try
     let lexbuf = Lexing.from_channel channel in
     let ast = Parser.start Lexer.token lexbuf in
-    let typecheck = Typechecker.typechecker ast (ref None) in
+    let typecheck = fst (Typechecker.typechecker ast (ref None)) in
     if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
     let res = Comp.comp ast in
     output_string outchannel preamble;

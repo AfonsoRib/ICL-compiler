@@ -6,7 +6,7 @@ let main =
     try
       let lexbuf = Lexing.from_channel stdin in
       let ast = Parser.start Lexer.token lexbuf in
-      let typecheck = Typechecker.typechecker ast (ref None) in
+      let typecheck = fst (Typechecker.typechecker ast (ref None)) in
       if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
       (* printf "type: %s\n" (Typechecker.str_typ typecheck); *)
       let res = Ast.eval ast (ref None) in
