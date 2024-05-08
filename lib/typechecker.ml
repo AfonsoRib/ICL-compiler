@@ -94,7 +94,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
       | _ -> (NoneType, eWithType e NoneType))
   | Not (e1,_) -> let t = fst (typechecker e1 env)
                   in (t, Not(e1, t))
-  | Let (binds, e, _) ->
+  | Let (binds, expr, _) ->
      let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : typ environment option) =
        match bindings with
        | [] -> ()
@@ -113,16 +113,16 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      in
      env := Env.begin_scope !env;
      add_to_env binds (!env);
-     let res = fst (typechecker e env) in
+     let res = fst (typechecker expr env) in
      env := Env.end_scope !env;
-     (res, Let(binds, e, res))
-  | New(e,_) ->  let t = RefType(fst (typechecker e env)) in
-                 (t, New(e, t))
-  | Deref(e,_) ->
-     (match fst (typechecker e env) with
-      | RefType r -> (r, Deref(e,r))
-      | _ -> (NoneType, Deref(e,NoneType)))
-  | Assign(id,e,_) -> if (Env.find !env id) = NoneType || fst (typechecker e env) = NoneType then (NoneType, Assign(id, e, NoneType)) else
+     (res, Let(binds, expr, res))
+  | New(e1,_) ->  let t = RefType(fst (typechecker e1 env)) in
+                 (t, New(e1, t))
+  | Deref(e1,_) ->
+     (match fst (typechecker e1 env) with
+      | RefType r -> (r, Deref(e1,r))
+      | _ -> (NoneType, Deref(e1,NoneType)))
+  | Assign(id,e1,_) -> if (Env.find !env id) = NoneType || fst (typechecker e1 env) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
                         (UnitType, Assign(id,e, UnitType))
   | While (e1,e2,_) -> let t1 = fst (typechecker e1 env) and
                          t2 =  fst (typechecker e2 env) in
@@ -143,9 +143,9 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                   let e2type = fst (typechecker e2 env) in
                   if e1type = NoneType || e2type = NoneType then (NoneType, Seq(e1,e2,NoneType)) else
                       (e2type, Seq(e1,e2,e2type))
-  | PrintLn(e,_) -> if fst (typechecker e env) = NoneType then (NoneType,PrintLn(e,NoneType)) else
+  | PrintLn(e1,_) -> if fst (typechecker e1 env) = NoneType then (NoneType,PrintLn(e1,NoneType)) else
                     (UnitType, eWithType e UnitType)
-  | Print(e,_) -> if fst (typechecker e env) = NoneType then (NoneType,Print(e,NoneType)) else
+  | Print(e1,_) -> if fst (typechecker e1 env) = NoneType then (NoneType,Print(e1,NoneType)) else
                   (UnitType, Print(e,UnitType))
   | UnitExp _-> (UnitType, UnitExp(UnitType))
   | String(s,_) -> (StringType, String(s, StringType))

@@ -3,10 +3,12 @@ open Icl
 
 let eval_string input =
   let lexbuf = Lexing.from_string input in
-  let ast = Parser.start Lexer.token lexbuf in
-  let typecheck = fst (Typechecker.typechecker ast (ref None)) in
-  if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
-  Ast.eval ast (ref None)
+  let ast1 = Parser.start Lexer.token lexbuf in
+  let typecheck = (Typechecker.typechecker ast1 (ref None)) in
+  let typ = fst typecheck in
+  let ast2 = snd typecheck in (*isto quebra os testes, don't know why*)
+  if typ = Types.NoneType then failwith "Failed typechecker pass. Expression type: None"; (*TODO: mudar isto*)
+  Ast.eval ast2 (ref None)
 
 let test_eval_string input expected_output _ =
   let result = eval_string input in

@@ -39,13 +39,15 @@ let main =
   try
     let lexbuf = Lexing.from_channel channel in
     let ast = Parser.start Lexer.token lexbuf in
-    let typecheck = fst (Typechecker.typechecker ast (ref None)) in
-    if typecheck = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
+    let typecheck = (Typechecker.typechecker ast (ref None)) in
+    let typ = fst typecheck in
+    let ast = snd typecheck in
+    if typ = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
     let res = Comp.comp ast in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
-    if typecheck != Types.UnitType then
-      output_string outchannel (printType typecheck);
+    if typ != Types.UnitType then
+      output_string outchannel (printType typ);
     output_string outchannel footer
   with | Failure msg -> print_endline msg
        | _ -> print_endline "Syntax error!"
