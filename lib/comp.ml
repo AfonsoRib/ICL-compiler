@@ -85,7 +85,6 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
      let loc = Env.find !env id in
      [Aload 0;
       Getfield (loc, Frame.type_to_string t);]
-
   | Add (e1, e2, _) -> comp e1 env @ comp e2 env @ [Iadd]
   | Mult (e1, e2, _) -> comp e1 env @ comp e2 env @ [Imul]
   | Sub (e1, e2, _) -> comp e1 env @ comp e2 env @ [Isub]
@@ -151,8 +150,6 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
       Putfield (frame_number^"/SL", "Ljava/lang/Object;");
       Astore 0;
       Aload 0] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", "Ljava/lang/Object;"); Astore 0]
-
-  (* aux bindings :: (comp e env)       *)
 
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
