@@ -28,14 +28,14 @@ let gen_frame bindings =
   in
   let fields = gen_fields 0 bindings in
   let constructor = [
-      ".method public <init>()";
+      ".method public <init>()V";
       "aload 0";
       "invokenonvirtual java/lang/Object/<init>()V";
       "return";
       ".end method"
     ] in
   let frame_number = string_of_int (gen_number_frame ())  in 
-  let f = (".class frame_" ^ frame_number)  :: ".super java/lang/Object" :: ".field public SL Ljava/lang/Object;" :: fields @ constructor
+  let f = (".class public frame_" ^ frame_number)  :: ".super java/lang/Object" :: ".field public SL Ljava/lang/Object;" :: fields @ constructor
   and oc = open_out ("frame_"^ frame_number ^".j") in
   List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
   "frame_" ^ frame_number

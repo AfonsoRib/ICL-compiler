@@ -22,7 +22,7 @@ runC:
 		echo "Jasmin file is empty, likely due to previous errors. Stopping."; \
 		exit 1; \
 	else \
-		if ! java -jar jasmin.jar jasmin.j; then \
+		if ! java -jar jasmin.jar *.j; then \
 			echo "Jasmin error, stopping."; \
 			exit 1; \
 		fi; \

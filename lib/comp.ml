@@ -83,8 +83,8 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
   | Statement (b, _) -> if b then [Sipush 1] else [Sipush 0]
   | Id (id, t) ->
      let loc = Env.find !env id in
-     [Checkcast "frame_0";
-      Getfield ("frame_0/" ^ loc, Frame.type_to_string t) ]
+     [Aload 0;
+      Getfield (loc, Frame.type_to_string t);]
 
   | Add (e1, e2, _) -> comp e1 env @ comp e2 env @ [Iadd]
   | Mult (e1, e2, _) -> comp e1 env @ comp e2 env @ [Imul]
@@ -133,7 +133,7 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
        | (id, e1, t)::rest ->
           let location = frame_number ^ "/loc_" ^ string_of_int !loc_id in
           let c1 = comp e1 env in
-          let ret = (Aload 0) :: (c1 @ [Putfield (location, Frame.type_to_string t)]) in
+          let ret = c1 @ [Putfield (location, Frame.type_to_string t);] in
           Env.bind n_env id location;
           loc_id := !loc_id +1;
           ret @ (aux rest n_env)
@@ -148,8 +148,9 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
       Invokespecial (frame_number ^ "/<init>()V");
       Dup;
       Aload 0;
-      Putfield (frame_number^"/SL", "Ljava/lang/Object");
-      Astore 0] @ vars @ res
+      Putfield (frame_number^"/SL", "Ljava/lang/Object;");
+      Astore 0;
+      Aload 0] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", "Ljava/lang/Object;"); Astore 0]
 
   (* aux bindings :: (comp e env)       *)
 
