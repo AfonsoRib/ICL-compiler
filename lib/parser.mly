@@ -147,6 +147,6 @@ let_bindings:
 
 binding:
   | id=ID EQ e=exp
-    { (id, e, None) }
+    { (id, e, Types.NoneType) }
   | id=ID COLON type_refs_list EQ  e=exp
-    { (id, e, Some ( Typechecker.typ_str (List.rev $3))) }
+    { (id, e, Typechecker.typ_str (List.rev $3)) }

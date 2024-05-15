@@ -65,7 +65,8 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | FloatFact (n,_) -> (FloatType, FloatFact(n,FloatType))
   | Statement (b,_) -> (BoolType, Statement(b, BoolType))
   | Id (x, _) -> let t = Env.find !env x
-                 in (t, Id(x, t))
+                 in
+                 (t, Id(x, t))
   | Add (e1, e2, _) | Mult (e1, e2,_) | Sub (e1, e2,_) | Div (e1, e2,_) ->
      let t1 = fst (typechecker e1 env) and
          t2 = fst (typechecker e2 env)
@@ -95,31 +96,33 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | Not (e1,_) -> let t = fst (typechecker e1 env)
                   in (t, Not(e1, t))
   | Let (binds, expr, _) ->
-     let rec add_to_env (bindings : (string * exp * typ option) list) (n_env : typ environment option) =
+     let rec add_to_env (bindings : (string * exp * typ) list) (n_env : typ environment option) =
        match bindings with
-       | [] -> ()
+       | [] -> []
        | (id, e1, t1)::rest -> let v = fst (typechecker e1 (ref n_env)) in
                                (match t1 with
-                                | Some t ->
-                                   if (t <> v) then
+                                | NoneType ->
+                                   Env.bind n_env id v;
+                                   (id,e1,v)::add_to_env rest n_env
+                                | _ ->
+                                   if (t1 <> v) then
                                      failwith ("for id \"" ^ id ^ "\" types don't match")
                                    else
                                      (Env.bind n_env id v;
-                                      add_to_env rest n_env)
-
-                                | None ->
-                                   Env.bind n_env id v;
-                                   add_to_env rest n_env)
+                                      (id,e1,v)::add_to_env rest n_env))
      in
      env := Env.begin_scope !env;
-     add_to_env binds (!env);
-     let res = fst (typechecker expr env) in
+     let new_binds = add_to_env binds (!env) in
+     let tpck = (typechecker expr env) in
+     let res = fst tpck in
+     let new_expr = snd tpck in
      env := Env.end_scope !env;
-     (res, Let(binds, expr, res))
+     (res, Let(new_binds, new_expr, res))
   | New(e1,_) ->  let t = RefType(fst (typechecker e1 env)) in
                  (t, New(e1, t))
   | Deref(e1,_) ->
-     (match fst (typechecker e1 env) with
+     let t1 = fst (typechecker e1 env) in
+     (match t1 with
       | RefType r -> (r, Deref(e1,r))
       | _ -> (NoneType, Deref(e1,NoneType)))
   | Assign(id,e1,_) -> if (Env.find !env id) = NoneType || fst (typechecker e1 env) = NoneType then (NoneType, Assign(id, e1, NoneType)) else

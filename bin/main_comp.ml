@@ -41,9 +41,9 @@ let main =
     let ast = Parser.start Lexer.token lexbuf in
     let typecheck = (Typechecker.typechecker ast (ref None)) in
     let typ = fst typecheck in
-    let ast = snd typecheck in
+    let ast2 = snd typecheck in
     if typ = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
-    let res = Comp.comp ast in
+    let res = Comp.comp ast2 (ref None)in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
     if typ != Types.UnitType then
