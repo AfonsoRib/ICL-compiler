@@ -132,7 +132,7 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
        | (id, e1, t)::rest ->
           let location = frame_number ^ "/loc_" ^ string_of_int !loc_id in
           let c1 = comp e1 env in
-          let ret = c1 @ [Putfield (location, Frame.type_to_string t);] in
+          let ret = Aload 0 :: c1 @ [Putfield (location, Frame.type_to_string t);] in
           Env.bind n_env id location;
           loc_id := !loc_id +1;
           ret @ (aux rest n_env)
@@ -149,7 +149,7 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
       Aload 0;
       Putfield (frame_number^"/SL", "Ljava/lang/Object;");
       Astore 0;
-      Aload 0] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", "Ljava/lang/Object;"); Astore 0]
+      ] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", "Ljava/lang/Object;"); Astore 0]
 
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
