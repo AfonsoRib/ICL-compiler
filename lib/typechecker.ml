@@ -114,11 +114,12 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      let rec add_to_env (bindings : (string * exp * typ) list) (n_env : typ environment option) =
        match bindings with
        | [] -> []
-       | (id, e1, t1)::rest -> let v = fst (typechecker e1 (ref n_env)) in
+       | (id, e1, t1)::rest -> let tpck = (typechecker e1 (ref n_env)) in
+                               let v = fst tpck and n_e1 = snd tpck in
                                (match t1 with
                                 | NoneType ->
                                    Env.bind n_env id v;
-                                   (id,e1,v)::add_to_env rest n_env
+                                   (id,n_e1,v)::add_to_env rest n_env
                                 | _ ->
                                    if (t1 <> v) then
                                      failwith ("for id \"" ^ id ^ "\" types don't match")

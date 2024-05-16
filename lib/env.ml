@@ -20,6 +20,14 @@ let rec find (env : 'a environment option) id =
                | Some v ->  v
                | None -> find ev.prev id
 
+
+let rec findEnv (env : 'a environment option) id jmps=
+  match env with
+  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | Some ev -> match Hashtbl.find_opt ev.table id with
+               | Some _ ->  jmps 
+               | None -> findEnv ev.prev id jmps+1
+
 let begin_scope (prev : 'a environment option) : ('a environment option) = Some (create_environment prev)
 
 let end_scope (env : 'a environment option) =

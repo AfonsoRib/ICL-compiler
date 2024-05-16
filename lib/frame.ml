@@ -18,7 +18,7 @@ let type_to_string t=
   | StringType -> "str"
 
 
-let gen_frame bindings =
+let gen_frame bindings env =
   let rec gen_fields n bindings =
     match bindings with
     | [] -> []
@@ -34,9 +34,16 @@ let gen_frame bindings =
       "return";
       ".end method"
     ] in
-  let frame_number = string_of_int (gen_number_frame ())  in 
-  let f = (".class public frame_" ^ frame_number)  :: ".super java/lang/Object" :: ".field public SL Ljava/lang/Object;" :: fields @ constructor
+  let fn = gen_number_frame () in
+  let frame_number = string_of_int (fn)  in 
+  let f = (".class public frame_" ^ frame_number)  ::
+            ".super java/lang/Object" ::
+              (".field public SL " ^ if env = None
+                                   then "Ljava/lang/Object;"
+                                   else "Lframe_" ^ string_of_int((!counter_frames) - 2) ^ ";")
+ ::
+                fields @ constructor
   and oc = open_out ("frame_"^ frame_number ^".j") in
   List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
-  "frame_" ^ frame_number
+  fn
 
