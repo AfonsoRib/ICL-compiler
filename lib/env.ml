@@ -11,14 +11,21 @@ let bind (env : 'a environment option) (id : string) (value : 'a) =
   | None -> failwith "cannot bind value to null hashtable"
   | Some v -> Hashtbl.add v.table id value
 
-
-
 let rec find (env : 'a environment option) id =
   match env with
   | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
                | Some v ->  v
                | None -> find ev.prev id
+
+
+let rec compFind (env : 'a environment option) (id : string) depth  : int * int=
+  match env with
+  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | Some ev -> 
+     match Hashtbl.find_opt ev.table id with
+               | Some v ->  (v, depth+1)
+               | None -> compFind ev.prev id (depth+1)
 
 let begin_scope (prev : 'a environment option) : ('a environment option) = Some (create_environment prev)
 

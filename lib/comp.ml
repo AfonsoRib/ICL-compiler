@@ -77,14 +77,29 @@ let jvmString i =
           | Checkcast s -> "checkcast " ^ s
          )
 
-let rec comp (expression : exp) (env : string environment option ref) : jvm list =
+let rec comp (expression : exp) (env : int environment option ref) : jvm list =
   match expression with
   | Fact (n, _) -> [Sipush n]
   | Statement (b, _) -> if b then [Sipush 1] else [Sipush 0]
   | Id (id, t) ->
-     let loc = Env.find !env id in
-     [Aload 0;
-      Getfield (loc, Frame.type_to_string t);]
+     (* print_endline id; *)
+     (* print_endline (Frame.type_to_string t); *)
+     let findRes = Env.compFind !env id (-1) in
+     let jumps = fst findRes and
+         loc = (snd findRes)
+     in
+     let rec aux jmps =
+       match jmps with
+       | jmps when jmps < 0 -> failwith "invalid number of jumps"
+       | jmps when jmps = 0 -> []
+       | jmps when jmps > 0 ->
+          let curFrame = !(Frame.counter_frames) - jmps in
+          [Getfield ("frame_" ^ string_of_int curFrame ^ "/sl", "Lframe_" ^ string_of_int (curFrame-1) ^ ";")] @ aux (jmps-1)
+       | _ -> failwith "unexpected value for jmps"
+
+     in
+     Aload 0 :: aux jumps @
+       [Getfield ("frame_" ^ string_of_int (!(Frame.counter_frames) -1) ^ "/loc_"^ string_of_int loc, Frame.type_to_string t)]
   | Add (e1, e2, _) -> comp e1 env @ comp e2 env @ [Iadd]
   | Mult (e1, e2, _) -> comp e1 env @ comp e2 env @ [Imul]
   | Sub (e1, e2, _) -> comp e1 env @ comp e2 env @ [Isub]
@@ -124,16 +139,16 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
                        in
                        c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop]
   | Let(binds, expr, _) ->
-     let frame_number = Frame.gen_frame binds in
+     let n = Frame.gen_frame binds !env in
+     let frame_number = "frame_" ^ n in
      let loc_id = ref 0 in
      let rec aux bindings n_env =
        match bindings with
        | [] -> []
        | (id, e1, t)::rest ->
-          let location = frame_number ^ "/loc_" ^ string_of_int !loc_id in
           let c1 = comp e1 env in
-          let ret = c1 @ [Putfield (location, Frame.type_to_string t);] in
-          Env.bind n_env id location;
+          let ret = c1 @ [Putfield ("frame_" ^ string_of_int (!(Frame.counter_frames)-1) ^"/loc_" ^ string_of_int !loc_id, Frame.type_to_string t);] in
+          Env.bind n_env id !loc_id;
           loc_id := !loc_id +1;
           ret @ (aux rest n_env)
      in
@@ -147,10 +162,13 @@ let rec comp (expression : exp) (env : string environment option ref) : jvm list
       Invokespecial (frame_number ^ "/<init>()V");
       Dup;
       Aload 0;
-      Putfield (frame_number^"/SL", "Ljava/lang/Object;");
+      if !env = None then
+        Putfield (frame_number^"/SL", "Ljava/lang/Object;")
+      else
+        Putfield (frame_number^"/SL", "Lframe_" ^ string_of_int((!Frame.counter_frames) - 1) ^ ";")
+      ;
       Astore 0;
       Aload 0] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", "Ljava/lang/Object;"); Astore 0]
-
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
   | _ -> [Nop]

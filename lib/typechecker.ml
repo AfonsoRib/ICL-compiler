@@ -65,7 +65,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | FloatFact (n,_) -> (FloatType, FloatFact(n,FloatType))
   | Statement (b,_) -> (BoolType, Statement(b, BoolType))
   | Id (x, _) -> let t = Env.find !env x
-                 in
+                 in                 
                  (t, Id(x, t))
   | Add (e1, e2, _) | Mult (e1, e2,_) | Sub (e1, e2,_) | Div (e1, e2,_) ->
      let typecheck1 = typechecker e1 env and
@@ -79,7 +79,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      (match (t1,t2) with
       | (IntType, IntType) -> (IntType, eWithType e IntType n_e1 n_e2)
       | (IntType, FloatType) | (FloatType, IntType) | (FloatType, FloatType) -> (FloatType, eWithType e FloatType n_e1 n_e2)
-      | _ -> (NoneType, (eWithType e NoneType e1 e2)))
+      | _ -> (NoneType, (eWithType e NoneType n_e1 n_e2)))
   | Ne (e1, e2, _)| Le (e1, e2, _)| Ge (e1, e2, _)| Lt (e1, e2, _)| Gt (e1, e2, _) | Eq (e1, e2, _) ->
      let rec aux t1 t2 n_e1 n_e2 =
        (match (t1,t2) with
