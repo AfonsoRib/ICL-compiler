@@ -42,6 +42,7 @@ type jvm =
   | Putfield of string * string
   | Getfield of string * string
   | Checkcast of string
+  | Pop
 
 let jvmString i =
   "\t" ^ (match i with
@@ -75,6 +76,7 @@ let jvmString i =
           | Putfield (loc,t) -> "putfield " ^ loc ^ " " ^ t
           | Getfield (loc,t) -> "getfield " ^ loc ^ " " ^ t
           | Checkcast s -> "checkcast " ^ s
+          | Pop -> "pop"
          )
 
 let rec comp (expression : exp) (env : int environment option ref) : jvm list =
@@ -167,7 +169,9 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
       Putfield (frame_number^"/SL", frameType);
       Astore 0;
       ] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", frameType); Astore 0]
-
+  | Seq(e1,e2,_) -> let c1 =comp e1 env
+                    and c2 = comp e2 env in
+                    c1 @ [Pop]@ c2
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
   | _ -> [Nop]

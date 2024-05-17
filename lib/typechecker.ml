@@ -158,10 +158,15 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                         in
                         if t1 != BoolType || t2 != UnitType then (NoneType, IfThen(e1,e2,NoneType)) else
                           (t2,IfThen(e1,e2,t2))
-  | Seq(e1,e2,_) -> let e1type = fst( typechecker e1 env) in
-                    let e2type = fst (typechecker e2 env) in
+  | Seq(e1,e2,_) -> let tp1 = typechecker e1 env and
+                        tp2 = (typechecker e2 env) in
+                    let e1type = fst tp1 and
+                        e2type = fst  tp2 and
+                        n_e1 = snd tp1 and
+                        n_e2 = snd tp2 
+                    in
                     if e1type = NoneType || e2type = NoneType then (NoneType, Seq(e1,e2,NoneType)) else
-                      (e2type, Seq(e1,e2,e2type))
+                      (e2type, Seq(n_e1,n_e2,e2type))
   | PrintLn(e1,_) -> let typecheck1 = (typechecker e1 env) in
                      let t1 = fst typecheck1 and
                          n_e1 = snd typecheck1 in
