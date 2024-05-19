@@ -13,7 +13,7 @@ let type_to_string t=
   | BoolType -> "Z"
   (* | _ -> failwith "not supported" *)
   | UnitType -> "unit"
-  | RefType _ -> "ref"
+  | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "str"
 

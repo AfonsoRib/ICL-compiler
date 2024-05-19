@@ -134,13 +134,18 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      let new_expr = snd tpck in
      env := Env.end_scope !env;
      (res, Let(new_binds, new_expr, res))
-  | New(e1,_) ->  let t = RefType(fst (typechecker e1 env)) in
-                  (t, New(e1, t))
+  | New(e1,_) -> let tpck = typechecker e1 env in
+                 let n_e1 = snd tpck in
+                   let t = RefType(fst tpck) in
+                   (t, New(n_e1, t))
   | Deref(e1,_) ->
-     let t1 = fst (typechecker e1 env) in
+     let tpck = typechecker e1 env in
+     let t1 = fst tpck and
+         n_e1 = snd tpck in
+    
      (match t1 with
-      | RefType r -> (r, Deref(e1,r))
-      | _ -> (NoneType, Deref(e1,NoneType)))
+      | RefType r -> (r, Deref(n_e1,t1))
+      | _ -> (NoneType, Deref(n_e1,NoneType)))
   | Assign(id,e1,_) -> if (Env.find !env id) = NoneType || fst (typechecker e1 env) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
                          (UnitType, Assign(id,e, UnitType))
   | While (e1,e2,_) -> let t1 = fst (typechecker e1 env) and

@@ -34,7 +34,7 @@ type jvm =
   | Nop
   | Goto of string
   | Ldc of string
-  | New of string
+  | NewJvm of string
   | Dup
   | Invokespecial of string
   | Aload of int
@@ -68,7 +68,7 @@ let jvmString i =
           | Goto label -> "goto " ^ label
           | Nop -> "nop"
           | Ldc s -> "ldc " ^ s
-          | New s -> "new " ^ s
+          | NewJvm s -> "new " ^ s
           | Dup -> "dup"
           | Invokespecial f -> "invokespecial " ^ f
           | Aload i -> "aload " ^ string_of_int i
@@ -161,7 +161,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
          "Ljava/lang/Object;"
        else
          "Lframe_" ^ string_of_int (fn-1) ^ ";" in
-     [New frame_number;
+     [NewJvm frame_number;
       Dup;
       Invokespecial (frame_number ^ "/<init>()V");
       Dup;
@@ -172,6 +172,19 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
   | Seq(e1,e2,_) -> let c1 =comp e1 env
                     and c2 = comp e2 env in
                     c1 @ [Pop]@ c2
+  | New(e1,t) ->
+     let c1 = comp e1 env in
+     let typeName = Ref.gen_ref t in
+     [NewJvm typeName;
+      Dup;
+      Invokespecial (typeName ^ "/<init>()V");
+      Dup;
+     ] @ c1 @ [Putfield (typeName^"/value", Ref.string_of_ref_subtype t)]
+  | Deref(e1,t) ->
+     let c1 = comp e1 env in
+     let loc = Ref.string_of_type t ^ "/value"
+     and t1 = Ref.string_of_ref_subtype t in
+     c1 @ [Getfield (loc, t1)]
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
   | _ -> [Nop]
