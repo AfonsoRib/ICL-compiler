@@ -114,8 +114,8 @@ exp:
     { Let(bindings, e, Types.NoneType) }
   | NEW e=exp
     { New(e, Types.NoneType) }
-  | id=ID ASSIGN e=exp
-    { Assign(id, e, Types.NoneType) }
+  | e1=exp ASSIGN e2=exp
+    { Assign(e1, e2, Types.NoneType) }
   | DEREF e=exp
     { Deref(e, Types.NoneType) }
   | IF e1=exp THEN e2=exp ELSE e3=exp END

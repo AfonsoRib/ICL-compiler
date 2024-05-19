@@ -22,7 +22,7 @@ type exp =
   |Id of string * typ
   |New of exp * typ
   |Deref of exp * typ
-  |Assign of string * exp * typ
+  |Assign of exp * exp * typ (* primeira argumento do assign tem que mudar para expression? *)
   |While of exp * exp * typ
   |IfThenElse of exp * exp * exp * typ
   |IfThen of exp * exp * typ
@@ -138,8 +138,10 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | New(e, _) -> Ref(ref (eval e env))
   | Deref(e, _) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
   | Assign(x, e, _) ->
-     let ref_result = Env.find !env x and
-         value_to_assign = eval e env in
+     let
+       (* ref_result = Env.find !env x and *)
+       ref_result = eval x env and
+       value_to_assign = eval e env in
      (match ref_result with
       | Ref r -> r := value_to_assign
       | _ -> failwith "Left-hand side of assignment must be a reference")

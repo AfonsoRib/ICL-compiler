@@ -44,6 +44,39 @@ type jvm =
   | Checkcast of string
   | Pop
 
+let getSubExprType e =
+  match e with
+  |Add (_,_,t) -> t
+  |Sub (_,_,t) -> t
+  |Mult (_,_,t) -> t
+  |Div (_,_,t) -> t
+  |Fact (_,t) -> t
+  |FloatFact (_,t) -> t
+  |Eq (_,_,t) -> t
+  |Ne (_,_,t) -> t
+  |Le (_,_,t) -> t
+  |Ge (_,_,t) -> t
+  |Lt (_,_,t) -> t
+  |Gt (_,_,t) -> t
+  |And (_,_,t) -> t
+  |Or (_,_,t) -> t
+  |Not (_,t) -> t
+  |Statement (_,t) -> t
+  |Let (_ ,_,t) -> t
+  |Id (_,t) -> t
+  |New (_,t) -> t
+  |Deref (_,t) -> t
+  |Assign (_,_,t) -> t
+  |While (_,_,t) -> t
+  |IfThenElse (_,_,_,t) -> t
+  |IfThen (_,_,t) -> t
+  |PrintLn (_,t) -> t
+  |Print (_,t) -> t
+  |Seq (_,_,t) -> t
+  |UnitExp (t) -> t
+  |String (_ ,t) -> t
+
+  
 let jvmString i =
   "\t" ^ (match i with
           | Iadd -> "iadd"
@@ -169,9 +202,12 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
       Putfield (frame_number^"/SL", frameType);
       Astore 0;
       ] @ vars @ res @ [Aload 0; Getfield (frame_number^"/SL", frameType); Astore 0]
-  | Seq(e1,e2,_) -> let c1 =comp e1 env
+  | Seq(e1,e2,_) -> let c1 = comp e1 env
                     and c2 = comp e2 env in
-                    c1 @ [Pop]@ c2
+                    let t1 = getSubExprType e1 in
+                    print_endline (Ref.string_of_type t1);
+                    let aux = if t1 = UnitType then [] else [Pop] in
+                    c1 @ aux @ c2
   | New(e1,t) ->
      let c1 = comp e1 env in
      let typeName = Ref.gen_ref t in
@@ -185,6 +221,20 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      let loc = Ref.string_of_type t ^ "/value"
      and t1 = Ref.string_of_ref_subtype t in
      c1 @ [Getfield (loc, t1)]
+  | Assign(e1,e2,_) ->
+     let aux e =
+
+       match e with
+       | Id(_, t1) -> print_endline (Ref.string_of_type t1);
+                        (match t1 with RefType _ -> t1 | _ -> failwith "not ref")
+       | New(_,t1) -> t1
+       | _ -> failwith "not ref "
+     in
+     let c1 = comp e1 env in
+     let c2 = comp e2 env in
+     let loc = Ref.string_of_type (aux e1) ^ "/value"
+     and t1 = Ref.string_of_ref_subtype (aux e1) in
+     c1 @ c2 @ [Putfield (loc, t1)]
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]
   | _ -> [Nop]

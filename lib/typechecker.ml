@@ -136,18 +136,20 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      (res, Let(new_binds, new_expr, res))
   | New(e1,_) -> let tpck = typechecker e1 env in
                  let n_e1 = snd tpck in
-                   let t = RefType(fst tpck) in
-                   (t, New(n_e1, t))
+                 let t = RefType(fst tpck) in
+                 (t, New(n_e1, t))
   | Deref(e1,_) ->
      let tpck = typechecker e1 env in
      let t1 = fst tpck and
          n_e1 = snd tpck in
-    
+     
      (match t1 with
       | RefType r -> (r, Deref(n_e1,t1))
       | _ -> (NoneType, Deref(n_e1,NoneType)))
-  | Assign(id,e1,_) -> if (Env.find !env id) = NoneType || fst (typechecker e1 env) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
-                         (UnitType, Assign(id,e, UnitType))
+  | Assign(id,e1,_) -> let tpck = (typechecker e1 env) in
+                       let tpckid =  typechecker id env in
+                       if (fst tpckid) = NoneType || (fst tpck) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
+                         (UnitType, Assign(snd tpckid,snd tpck, UnitType)) (*shouldn't this be int?*)
   | While (e1,e2,_) -> let t1 = fst (typechecker e1 env) and
                            t2 =  fst (typechecker e2 env) in
                        if t1 != BoolType || t2 = NoneType then (NoneType, While(e1,e2,NoneType)) else
