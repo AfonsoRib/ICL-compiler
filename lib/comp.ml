@@ -77,6 +77,7 @@ let getSubExprType e =
   |UnitExp (t) -> t
   |String (_ ,t) -> t
 
+
   
 let jvmString i =
   "\t" ^ (match i with
@@ -118,6 +119,7 @@ let jvmString i =
 let rec comp (expression : exp) (env : int environment option ref) : jvm list =
   match expression with
   | Fact (n, _) -> [Sipush n]
+  | FloatFact (f, _) -> [Ldc (string_of_float f)]
   | Statement (b, _) -> if b then [Sipush 1] else [Sipush 0]
   | Id (id, t) ->
      let cur_frame = !Frame.counter_frames -1 in
@@ -225,14 +227,6 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in 
      c1 @ [Getfield (loc, Frame.type_to_string (t))]
   | Assign(e1,e2,_) ->
-     (* let aux e = *)
-
-     (*   match e with *)
-     (*   | Id(_, t1) -> print_endline (Ref.string_of_type t1); *)
-     (*                  (match t1 with RefType _ -> t1 | _ -> failwith "not ref") *)
-     (*   | New(_,t1) -> t1 *)
-     (*   | _ -> failwith "not ref " *)
-     (* in *)
      let c1 = comp e1 env in
      let c2 = comp e2 env in
      let loc = Ref.string_of_type (getSubExprType e1) ^ "/value"
@@ -249,7 +243,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      let printType t =
        (match t with
         | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
-        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(D)Ljava/lang/String;"
+        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(F)Ljava/lang/String;"
         | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
         | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
         | _ -> Nop)
@@ -262,7 +256,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      let printType t =
        (match t with
         | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
-        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(D)Ljava/lang/String;"
+        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(F)Ljava/lang/String;"
         | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
         | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
         | _ -> Nop)
@@ -273,4 +267,4 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      Aload 1 :: c1 @ printType t1
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
-  | _ -> [Nop]
+  (* | _ -> [Nop] *)

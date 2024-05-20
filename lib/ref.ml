@@ -15,7 +15,7 @@ let string_of_ref_subtype t =
     match t1 with
       | RefType r -> "Lref_" ^ string_of_type r ^ ";"
       | IntType  -> "I"
-      | FloatType -> "D"
+      | FloatType -> "F"
       | BoolType -> "Z"
       | _ -> "none"
   in

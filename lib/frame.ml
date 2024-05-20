@@ -9,7 +9,7 @@ let gen_number_frame () =
 let type_to_string t=
   match t with
   | IntType -> "I"
-  | FloatType -> "D"
+  | FloatType -> "F"
   | BoolType -> "Z"
   (* | _ -> failwith "not supported" *)
   | UnitType -> "unit"
