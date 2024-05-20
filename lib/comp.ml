@@ -1,5 +1,4 @@
 open Ast
-(* open Frame *)
 open Env
 
 let counter_labels = ref 0
@@ -37,6 +36,8 @@ type jvm =
   | NewJvm of string
   | Dup
   | Invokespecial of string
+  | Invokestatic of string
+  | Invokevirtual of string
   | Aload of int
   | Astore of int
   | Putfield of string * string
@@ -104,6 +105,8 @@ let jvmString i =
           | NewJvm s -> "new " ^ s
           | Dup -> "dup"
           | Invokespecial f -> "invokespecial " ^ f
+          | Invokestatic f -> "invokestatic " ^ f
+          | Invokevirtual f -> "invokevirtual " ^ f
           | Aload i -> "aload " ^ string_of_int i
           | Astore i -> "astore "  ^ string_of_int i
           | Putfield (loc,t) -> "putfield " ^ loc ^ " " ^ t
@@ -218,15 +221,15 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      ] @ c1 @ [Putfield (typeName^"/value", Ref.string_of_ref_subtype t)]
   | Deref(e1,t) ->
      let c1 = comp e1 env in
-     let loc = Ref.string_of_type t ^ "/value"
-     and t1 = Ref.string_of_ref_subtype t in
-     c1 @ [Getfield (loc, t1)]
+     let loc = (Ref.string_of_type (RefType(t))) ^ "/value"
+     in 
+     c1 @ [Getfield (loc, Frame.type_to_string (t))]
   | Assign(e1,e2,_) ->
      let aux e =
 
        match e with
        | Id(_, t1) -> print_endline (Ref.string_of_type t1);
-                        (match t1 with RefType _ -> t1 | _ -> failwith "not ref")
+                      (match t1 with RefType _ -> t1 | _ -> failwith "not ref")
        | New(_,t1) -> t1
        | _ -> failwith "not ref "
      in
@@ -235,6 +238,39 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      let loc = Ref.string_of_type (aux e1) ^ "/value"
      and t1 = Ref.string_of_ref_subtype (aux e1) in
      c1 @ c2 @ [Putfield (loc, t1)]
+  (* | While(e1,e2,t) -> *)
+  (*    let c1 = comp e1 env and *)
+  (*        c2 = comp e2 env and *)
+  (*        l1 = gen_label () and *)
+  (*        l2 = gen_label () *)
+  (*                      in *)
+  (*                      c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop] *)
+  | Print(e1,_) ->
+     let printType t =
+       (match t with
+        | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
+        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(D)Ljava/lang/String;"
+        | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
+        | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
+        | _ -> Nop)
+       :: [Invokevirtual "java/io/PrintStream/print(Ljava/lang/String;)V"]
+     in
+     let c1 = comp e1 env in
+     let t1 = getSubExprType e1 in
+     c1 @ printType t1
+  | PrintLn(e1,_) ->
+     let printType t =
+       (match t with
+        | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
+        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(D)Ljava/lang/String;"
+        | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
+        | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
+        | _ -> Nop)
+       :: [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
+     in
+     let c1 = comp e1 env in
+     let t1 = getSubExprType e1 in
+     c1 @ printType t1
   | String(s, _) -> [Ldc s]
-  | UnitExp _ -> [Nop]
+  | UnitExp _ -> [Nop]          (* criar uma classe para units *)
   | _ -> [Nop]

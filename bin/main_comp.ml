@@ -5,14 +5,14 @@ let footer = "
 .end method
 "
 
-let printType t =
-  "\t" ^ (match t with
-  | Types.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;"
-  | Types.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;"
-  | Types.UnitType | Types.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
-  | Types.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;"
-  | _ -> "; not implemented")
-  ^ "\n\tinvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V"
+(* let printType t = *)
+(*   "\t" ^ (match t with *)
+(*   | Types.IntType -> "invokestatic java/lang/String/valueOf(I)Ljava/lang/String;" *)
+(*   | Types.FloatType ->"invokestatic java/lang/String/valueOf(D)Ljava/lang/String;" *)
+(*   | Types.UnitType | Types.StringType -> "invokestatic java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;" *)
+(*   | Types.BoolType -> "invokestatic java/lang/String/valueOf(Z)Ljava/lang/String;" *)
+(*   | _ -> "; not implemented") *)
+(*   ^ "\n\tinvokevirtual java/io/PrintStream/println(Ljava/lang/String;)V" *)
 
 let preamble =
 ".class public Demo
@@ -47,8 +47,8 @@ let main =
     let res = Comp.comp ast2 (ref None)in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
-    if typ != Types.UnitType then
-      output_string outchannel (printType typ);
+    (* if typ != Types.UnitType then *)
+    (*   output_string outchannel (printType typ); *)
     output_string outchannel footer
   with | Failure msg -> print_endline msg
        | _ -> print_endline "Syntax error!"

@@ -15,7 +15,7 @@ let type_to_string t=
   | UnitType -> "unit"
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
-  | StringType -> "str"
+  | StringType -> "Ljava/lang/String;"
 
 
 let gen_frame bindings env =

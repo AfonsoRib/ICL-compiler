@@ -137,15 +137,22 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | New(e1,_) -> let tpck = typechecker e1 env in
                  let n_e1 = snd tpck in
                  let t = RefType(fst tpck) in
+                 print_endline("New " ^ (Ref.string_of_type t));
                  (t, New(n_e1, t))
   | Deref(e1,_) ->
+     let resolveRef t =
+       match t with
+       | RefType r -> r
+       | _ -> failwith "Not a reference in deref "
+     in
      let tpck = typechecker e1 env in
-     let t1 = fst tpck and
+     let t1 = resolveRef(fst tpck) and
          n_e1 = snd tpck in
-     
-     (match t1 with
-      | RefType r -> (r, Deref(n_e1,t1))
-      | _ -> (NoneType, Deref(n_e1,NoneType)))
+     print_endline("deref " ^ (Ref.string_of_type t1));
+     (t1, Deref(n_e1,t1)) (* problema aqui *)
+     (* (match t1 with *)
+     (*  | RefType _ ->  *)
+     (*  | _ -> (NoneType, Deref(n_e1,NoneType))) *)
   | Assign(id,e1,_) -> let tpck = (typechecker e1 env) in
                        let tpckid =  typechecker id env in
                        if (fst tpckid) = NoneType || (fst tpck) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
