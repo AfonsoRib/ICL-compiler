@@ -210,7 +210,6 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
   | Seq(e1,e2,_) -> let c1 = comp e1 env
                     and c2 = comp e2 env in
                     let t1 = getSubExprType e1 in
-                    print_endline (Ref.string_of_type t1);
                     let aux = if t1 = UnitType then [] else [Pop] in
                     c1 @ aux @ c2
   | New(e1,t) ->

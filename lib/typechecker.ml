@@ -58,7 +58,6 @@ let eWithType e t n_e1 n_e2 =
   |UnitExp (_) ->  UnitExp(t)
   |String (s,_) ->  String(s,t)
 
-
 let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast.exp) =
   match e with
   | Fact (n, _) ->  (IntType, Fact(n,IntType))
@@ -108,8 +107,10 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      (match (t1, t2) with
       | (BoolType, BoolType) -> (BoolType, eWithType e BoolType n_e1 n_e2)
       | _ -> (NoneType, eWithType e NoneType e1 e2))
-  | Not (e1,_) -> let t = fst (typechecker e1 env)
-                  in (t, Not(e1, t))
+  | Not (e1,_) -> let tpck1 = (typechecker e1 env) in
+                  let t = fst tpck1 and
+                      n_e1 = snd tpck1
+                  in (t, Not(n_e1, t))
   | Let (binds, expr, _) ->
      let rec add_to_env (bindings : (string * exp * typ) list) (n_env : typ environment option) =
        match bindings with
@@ -137,7 +138,6 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | New(e1,_) -> let tpck = typechecker e1 env in
                  let n_e1 = snd tpck in
                  let t = RefType(fst tpck) in
-                 print_endline("New " ^ (Ref.string_of_type t));
                  (t, New(n_e1, t))
   | Deref(e1,_) ->
      let resolveRef t =
@@ -148,11 +148,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      let tpck = typechecker e1 env in
      let t1 = resolveRef(fst tpck) and
          n_e1 = snd tpck in
-     print_endline("deref " ^ (Ref.string_of_type t1));
-     (t1, Deref(n_e1,t1)) (* problema aqui *)
-     (* (match t1 with *)
-     (*  | RefType _ ->  *)
-     (*  | _ -> (NoneType, Deref(n_e1,NoneType))) *)
+     (t1, Deref(n_e1,t1))
   | Assign(id,e1,_) -> let tpck = (typechecker e1 env) in
                        let tpckid =  typechecker id env in
                        if (fst tpckid) = NoneType || (fst tpck) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
@@ -166,18 +162,31 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                            n_e2 = snd tpck2 in
                        if t1 != BoolType || t2 = NoneType then (NoneType, While(n_e1,n_e2,NoneType)) else
                          (UnitType, While(n_e1,n_e2,UnitType))
-  | IfThenElse (e1,e2,e3,_) -> let t1 = fst (typechecker e1 env) and
-                                   t2 = fst (typechecker e2 env) and
-                                   t3 = fst (typechecker e3 env)
-                                            (* todo n_e1 =  *) 
-                               in
-                               if t1 != BoolType || t2 = NoneType || t3 = NoneType then (NoneType, IfThenElse(e1,e2,e3,NoneType)) else
-                                 if t2 = t3 then (t2, IfThenElse(e1,e2,e3,t2)) else (NoneType, IfThenElse(e1,e2,e3,NoneType))
-  | IfThen (e1,e2,_) -> let t1 = fst (typechecker e1 env) and
-                            t2 = fst (typechecker e2 env)
-                        in
-                        if t1 != BoolType || t2 != UnitType then (NoneType, IfThen(e1,e2,NoneType)) else
-                          (t2,IfThen(e1,e2,t2))
+  | IfThenElse (e1,e2,e3,_) ->
+     let 
+       tpck1 = typechecker e1 env and
+       tpck2 = typechecker e2 env and
+       tpck3 = typechecker e3 env in
+     let
+       t1 = fst (tpck1) and
+       t2 = fst (tpck2) and
+       t3 = fst (tpck3) and
+       n_e1 = snd tpck1 and
+       n_e2 = snd tpck2 and
+       n_e3 = snd tpck3 
+     in
+     if t1 != BoolType || t2 = NoneType || t3 = NoneType then (NoneType, IfThenElse(n_e1,n_e2,n_e3,NoneType)) else
+       if t2 = t3 then (t2, IfThenElse(n_e1,n_e2,n_e3,t2)) else (NoneType, IfThenElse(n_e1,n_e2,n_e3,NoneType))
+  | IfThen (e1,e2,_) -> let
+      tpck1 = (typechecker e1 env) and
+      tpck2 = (typechecker e2 env) in
+    let t1 = fst tpck1  and
+        t2 = fst tpck2 and
+        n_e1 = snd tpck1 and
+        n_e2 = snd tpck2
+    in
+    if t1 != BoolType || t2 != UnitType then (NoneType, IfThen(n_e1,n_e2,NoneType)) else
+      (t2,IfThen(n_e1,n_e2,t2))
   | Seq(e1,e2,_) -> let tp1 = typechecker e1 env and
                         tp2 = (typechecker e2 env) in
                     let e1type = fst tp1 and
