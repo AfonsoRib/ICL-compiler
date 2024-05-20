@@ -157,13 +157,19 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                        let tpckid =  typechecker id env in
                        if (fst tpckid) = NoneType || (fst tpck) = NoneType then (NoneType, Assign(id, e1, NoneType)) else
                          (UnitType, Assign(snd tpckid,snd tpck, UnitType)) (*shouldn't this be int?*)
-  | While (e1,e2,_) -> let t1 = fst (typechecker e1 env) and
-                           t2 =  fst (typechecker e2 env) in
-                       if t1 != BoolType || t2 = NoneType then (NoneType, While(e1,e2,NoneType)) else
-                         (UnitType, While(e1,e2,UnitType))
+  | While (e1,e2,_) -> let tpck1 = typechecker e1 env in
+                       let tpck2 = typechecker e2 env
+                       in
+                       let t1 = fst tpck1 and
+                           t2 = fst tpck2 and
+                           n_e1 = snd tpck1 and
+                           n_e2 = snd tpck2 in
+                       if t1 != BoolType || t2 = NoneType then (NoneType, While(n_e1,n_e2,NoneType)) else
+                         (UnitType, While(n_e1,n_e2,UnitType))
   | IfThenElse (e1,e2,e3,_) -> let t1 = fst (typechecker e1 env) and
                                    t2 = fst (typechecker e2 env) and
                                    t3 = fst (typechecker e3 env)
+                                            (* todo n_e1 =  *) 
                                in
                                if t1 != BoolType || t2 = NoneType || t3 = NoneType then (NoneType, IfThenElse(e1,e2,e3,NoneType)) else
                                  if t2 = t3 then (t2, IfThenElse(e1,e2,e3,t2)) else (NoneType, IfThenElse(e1,e2,e3,NoneType))

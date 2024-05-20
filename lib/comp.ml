@@ -225,26 +225,26 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in 
      c1 @ [Getfield (loc, Frame.type_to_string (t))]
   | Assign(e1,e2,_) ->
-     let aux e =
+     (* let aux e = *)
 
-       match e with
-       | Id(_, t1) -> print_endline (Ref.string_of_type t1);
-                      (match t1 with RefType _ -> t1 | _ -> failwith "not ref")
-       | New(_,t1) -> t1
-       | _ -> failwith "not ref "
-     in
+     (*   match e with *)
+     (*   | Id(_, t1) -> print_endline (Ref.string_of_type t1); *)
+     (*                  (match t1 with RefType _ -> t1 | _ -> failwith "not ref") *)
+     (*   | New(_,t1) -> t1 *)
+     (*   | _ -> failwith "not ref " *)
+     (* in *)
      let c1 = comp e1 env in
      let c2 = comp e2 env in
-     let loc = Ref.string_of_type (aux e1) ^ "/value"
-     and t1 = Ref.string_of_ref_subtype (aux e1) in
+     let loc = Ref.string_of_type (getSubExprType e1) ^ "/value"
+     and t1 = Ref.string_of_ref_subtype (getSubExprType e1) in
      c1 @ c2 @ [Putfield (loc, t1)]
-  (* | While(e1,e2,t) -> *)
-  (*    let c1 = comp e1 env and *)
-  (*        c2 = comp e2 env and *)
-  (*        l1 = gen_label () and *)
-  (*        l2 = gen_label () *)
-  (*                      in *)
-  (*                      c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop] *)
+  | While(e1,e2,_) ->
+     let c1 = comp e1 env and
+         c2 = comp e2 env and
+         l1 = gen_label () and
+         l2 = gen_label ()
+                       in
+                       [Label l1] @ c1 @ [Sipush 1; If_icmpne l2;] @ c2 @ [Goto l1; Label l2; Nop]
   | Print(e1,_) ->
      let printType t =
        (match t with
@@ -257,7 +257,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in
      let c1 = comp e1 env in
      let t1 = getSubExprType e1 in
-     c1 @ printType t1
+     Aload 1:: c1 @ printType t1
   | PrintLn(e1,_) ->
      let printType t =
        (match t with
@@ -270,7 +270,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in
      let c1 = comp e1 env in
      let t1 = getSubExprType e1 in
-     c1 @ printType t1
+     Aload 1 :: c1 @ printType t1
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
   | _ -> [Nop]

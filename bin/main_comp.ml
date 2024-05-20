@@ -28,6 +28,7 @@ let preamble =
 \t; setup local variables:
 \t;    1 - the PrintStream object held in java.lang.out
 \tgetstatic java/lang/System/out Ljava/io/PrintStream;
+\tastore_1
 "
 
 
