@@ -4,6 +4,10 @@
 %token MINUS
 %token MULT
 %token DIV
+%token FPLUS
+%token FMINUS
+%token FMULT
+%token FDIV
 %token LPAR
 %token RPAR
 %token EOL
@@ -43,6 +47,10 @@
 %left MINUS
 %left MULT
 %left DIV
+%left FPLUS
+%left FMINUS
+%left FMULT
+%left FDIV
 %left EQ
 %left NE
 %left LE
@@ -88,6 +96,14 @@ exp:
     { Sub(e1, e2, Types.NoneType) }
   | e1=exp DIV e2=exp
     { Div(e1, e2, Types.NoneType) }
+  | e1=exp FPLUS e2=exp
+    { Addf(e1, e2, Types.NoneType) }
+  | e1=exp FMULT e2=exp
+    { Multf(e1, e2, Types.NoneType) }
+  | e1=exp FMINUS e2=exp
+    { Subf(e1, e2, Types.NoneType) }
+  | e1=exp FDIV e2=exp
+    { Divf(e1, e2, Types.NoneType) }
   | e1=exp EQ e2=exp
     { Eq(e1, e2, Types.NoneType) }
   | e1=exp NE e2=exp

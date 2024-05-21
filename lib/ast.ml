@@ -6,6 +6,10 @@ type exp =
   |Sub of exp * exp * typ
   |Mult of exp * exp * typ
   |Div of exp * exp * typ
+  |Addf of exp * exp * typ
+  |Subf of exp * exp * typ
+  |Multf of exp * exp * typ
+  |Divf of exp * exp * typ
   |Fact of int * typ
   |FloatFact of float * typ
   |Eq of exp * exp * typ
@@ -72,15 +76,6 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | _ -> failwith "Can only apply not to boolean"
   in
   let boolean_operation f x y =
-    (*
-    let ex = eval x env in
-      match (ex, f) with
-      | (Bool false, (&&)) -> f ex ex
-      | (Bool true, (||)) -> f ex ex
-      | (Bool b1, _) ->
-        match (eval y env) with
-        | Bool b2 -> f b1 b2)
-        *)
     match (x,y) with
     | (Bool b1, Bool b2) -> f b1 b2
     | _ -> failwith "Can only apply boolean operation to booleans"
@@ -94,12 +89,15 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
     | (Ref r1, Ref r2) -> inequality_operation f !r1 !r2
     | _ -> failwith "Type mismatch"
   in
-  let arythmetic_operation fint ffloat x y =
+  let int_operation fint x y =
     match (x, y) with
     | (Int i1, Int i2) -> Int (fint i1 i2)
+
+    | _ -> failwith "Type mismatch"
+  in
+  let float_operation ffloat x y =
+    match (x, y) with
     | (Float f1, Float f2) -> Float (ffloat f1 f2)
-    | (Int i1, Float f2) -> Float (ffloat (float_of_int i1) f2)
-    | (Float f1, Int i2) -> Float (ffloat f1 (float_of_int i2))
     | _ -> failwith "Type mismatch"
   in
   match expr with
@@ -107,10 +105,14 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | FloatFact (f, _) -> Float f
   | Statement (b, _) -> Bool b
   | Id (x, _) -> Env.find !env x
-  | Add (e1, e2, _) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
-  | Mult (e1, e2, _) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
-  | Sub (e1, e2, _) -> (arythmetic_operation (-) (-.) (eval e1 env) (eval e2 env))
-  | Div (e1, e2, _) -> (arythmetic_operation (/) ( /. ) (eval e1 env) (eval e2 env))
+  | Add (e1, e2, _) ->  (int_operation (+) (eval e1 env) (eval e2 env))
+  | Mult (e1, e2, _) -> (int_operation ( * ) (eval e1 env) (eval e2 env))
+  | Sub (e1, e2, _) -> (int_operation (-) (eval e1 env) (eval e2 env))
+  | Div (e1, e2, _) -> (int_operation (/) (eval e1 env) (eval e2 env))
+  | Addf (e1, e2, _) ->  (float_operation (+.) (eval e1 env) (eval e2 env))
+  | Multf (e1, e2, _) -> (float_operation ( *. ) (eval e1 env) (eval e2 env))
+  | Subf (e1, e2, _) -> (float_operation (-.) (eval e1 env) (eval e2 env))
+  | Divf (e1, e2, _) -> (float_operation ( /. ) (eval e1 env) (eval e2 env))
   | Eq (e1, e2, _) -> Bool(inequality_operation (=) (eval e1 env) (eval e2 env))
   | Ne (e1, e2, _) -> Bool(inequality_operation (<>) (eval e1 env) (eval e2 env))
   | Le (e1, e2, _) -> Bool(inequality_operation (<=) (eval e1 env) (eval e2 env))

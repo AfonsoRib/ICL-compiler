@@ -32,6 +32,10 @@ let eWithType e t n_e1 n_e2 =
   |Sub (_) ->  Sub(n_e1, n_e2, t)
   |Mult (_) ->  Mult(n_e1, n_e2, t)
   |Div (_) ->  Div(n_e1, n_e2, t)
+  |Addf (_) ->  Addf(n_e1, n_e2, t)
+  |Subf (_) ->  Subf(n_e1, n_e2, t)
+  |Multf (_) ->  Multf(n_e1, n_e2, t)
+  |Divf (_) ->  Divf(n_e1, n_e2, t)
   |Fact (n, _) ->  Fact(n,t)
   |FloatFact (f,_) ->  FloatFact(f,t)
   |Eq (_) ->  Eq(n_e1, n_e2, t)
@@ -77,7 +81,19 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      in
      (match (t1,t2) with
       | (IntType, IntType) -> (IntType, eWithType e IntType n_e1 n_e2)
-      | (IntType, FloatType) | (FloatType, IntType) | (FloatType, FloatType) -> (FloatType, eWithType e FloatType n_e1 n_e2)
+      (* | (IntType, FloatType) | (FloatType, IntType) | (FloatType, FloatType) -> (FloatType, eWithType e FloatType n_e1 n_e2) *)
+      | _ -> (NoneType, (eWithType e NoneType e1 e2)))
+  | Addf (e1, e2, _) | Multf (e1, e2,_) | Subf (e1, e2,_) | Divf (e1, e2,_) ->
+     let typecheck1 = typechecker e1 env and
+         typecheck2 = typechecker e2 env in
+     let
+       t1 = fst typecheck1 and
+       t2 = fst typecheck2 and
+       n_e1 = snd typecheck1 and
+       n_e2 = snd typecheck2
+     in
+     (match (t1,t2) with
+      | (FloatType, FloatType) -> (FloatType, eWithType e FloatType n_e1 n_e2)
       | _ -> (NoneType, (eWithType e NoneType e1 e2)))
   | Ne (e1, e2, _)| Le (e1, e2, _)| Ge (e1, e2, _)| Lt (e1, e2, _)| Gt (e1, e2, _) | Eq (e1, e2, _) ->
      let rec aux t1 t2 n_e1 n_e2 =

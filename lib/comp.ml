@@ -15,6 +15,10 @@ type jvm =
   | Isub
   | Imul
   | Idiv
+  | Fadd
+  | Fsub
+  | Fmul
+  | Fdiv
   | Iand
   | Ior
   | Ixor
@@ -53,6 +57,10 @@ let getSubExprType e =
   |Sub (_,_,t) -> t
   |Mult (_,_,t) -> t
   |Div (_,_,t) -> t
+  |Addf (_,_,t) -> t
+  |Subf (_,_,t) -> t
+  |Multf (_,_,t) -> t
+  |Divf (_,_,t) -> t
   |Fact (_,t) -> t
   |FloatFact (_,t) -> t
   |Eq (_,_,t) -> t
@@ -87,6 +95,10 @@ let jvmString i =
           | Isub -> "isub"
           | Imul -> "imul"
           | Idiv -> "idiv"
+          | Fadd -> "fadd"
+          | Fsub -> "fsub"
+          | Fmul -> "fmul"
+          | Fdiv -> "fdiv"
           | Iand -> "iand"
           | Ior -> "ior"
           | Ixor -> "ixor"
@@ -143,6 +155,10 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
   | Mult (e1, e2, _) -> comp e1 env @ comp e2 env @ [Imul]
   | Sub (e1, e2, _) -> comp e1 env @ comp e2 env @ [Isub]
   | Div (e1, e2, _) -> comp e1 env @ comp e2 env @ [Idiv]
+  | Addf (e1, e2, _) -> comp e1 env @ comp e2 env @ [Fadd] 
+  | Multf (e1, e2, _) -> comp e1 env @ comp e2 env @ [Fmul]
+  | Subf (e1, e2, _) -> comp e1 env @ comp e2 env @ [Fsub]
+  | Divf (e1, e2, _) -> comp e1 env @ comp e2 env @ [Fdiv]
   | Eq (e1, e2, _) -> let l1 = gen_label () in
                       let l2 = gen_label () in
                       comp e1 env @ comp e2 env @ [If_icmpne l1 ; Sipush 1; Goto l2; Label l1; Sipush 0; Label l2; Nop]

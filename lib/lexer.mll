@@ -16,6 +16,10 @@ rule token = parse
   |'-' { MINUS }
   |'*' { MULT }
   |'/' { DIV }
+  |"+." { FPLUS }
+  |"-." { FMINUS }
+  |"*." { FMULT }
+  |"/." { FDIV }
   |'(' { LPAR }
   |')' { RPAR }
   |'=' { EQ }
