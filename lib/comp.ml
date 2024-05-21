@@ -44,6 +44,8 @@ type jvm =
   | Getfield of string * string
   | Checkcast of string
   | Pop
+  | Getstatic of string * string
+
 
 let getSubExprType e =
   match e with
@@ -114,6 +116,7 @@ let jvmString i =
           | Getfield (loc,t) -> "getfield " ^ loc ^ " " ^ t
           | Checkcast s -> "checkcast " ^ s
           | Pop -> "pop"
+          | Getstatic(s1,s2) -> "getstatic " ^ s1 ^ " " ^ s2
          )
 
 let rec comp (expression : exp) (env : int environment option ref) : jvm list =
@@ -250,7 +253,7 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in
      let c1 = comp e1 env in
      let t1 = getSubExprType e1 in
-     Aload 1:: c1 @ printType t1
+          Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
   | PrintLn(e1,_) ->
      let printType t =
        (match t with
@@ -263,7 +266,6 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in
      let c1 = comp e1 env in
      let t1 = getSubExprType e1 in
-     Aload 1 :: c1 @ printType t1
+       Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
-  (* | _ -> [Nop] *)
