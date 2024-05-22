@@ -12,7 +12,6 @@ let bind (env : 'a environment option) (id : string) (value : 'a) =
   | Some v -> Hashtbl.add v.table id value
 
 
-
 let rec find (env : 'a environment option) id =
   match env with
   | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*)

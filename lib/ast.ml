@@ -50,7 +50,7 @@ let rec string_of_eval_result = function
   | Unit -> "Unit"
   | Ref r ->  (string_of_eval_result !r ) ^ " ref"
   | Str s -> "String " ^ s
-  | Closure (x, e, env) -> "Closure (" ^ x ^ ", " ^ (string_of_exp e) ^ ", " ^ (string_of_env !env) ^ ")"
+  | Closure (_, _, _) -> "Closure"
 
 let rec string_of_ref t contents_start contents_end typ =
   match t with
@@ -60,7 +60,7 @@ let rec string_of_ref t contents_start contents_end typ =
   | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
   | Float f -> "float" ^ typ ^ " = " ^ contents_start ^ string_of_float f ^ contents_end
   | Str s -> "string" ^ typ ^ " = " ^ contents_start ^ s ^ contents_end
-  | Closure (x, e, env) -> "Closure (" ^ x ^ ", " ^ (string_of_exp e) ^ ", " ^ (string_of_env !env) ^ ")" ^ typ
+  | Closure (_, _, _) -> "Closure"
 
 let rec string_of_eval_result_clean = function
   | Int n -> string_of_int n
@@ -68,6 +68,7 @@ let rec string_of_eval_result_clean = function
   | Bool b -> string_of_bool b
   | Unit -> "Unit"
   | Ref r -> string_of_eval_result_clean !r
+  | Closure (_, _, _) -> "Closure"
   | Str s -> s
 
 let rec eval (expr : exp) (env : eval_result environment option ref) : eval_result =
@@ -102,7 +103,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Fact (n, _) ->  Int n
   | FloatFact (f, _) -> Float f
   | Statement (b, _) -> Bool b
-  | Fun (x, e, _) -> Closure (x, e, ref (Env.empty))
+  | Fun (x, e, _) -> Closure (x, e, ref (Env.create_environment None))
   | Id (x, _) -> Env.find !env x
   | Add (e1, e2, _) ->  (arythmetic_operation (+) (+.) (eval e1 env) (eval e2 env))
   | Mult (e1, e2, _) -> (arythmetic_operation ( * ) ( *. ) (eval e1 env) (eval e2 env))
@@ -124,7 +125,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
        match bindings with
        | [] -> ()
        | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in
-                           §Env.bind n_env id v;
+                           Env.bind n_env id v;
                            add_to_env rest n_env
      in
      env := Env.begin_scope !env;
@@ -133,18 +134,17 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
      env := Env.end_scope !env;
      res
   | App (e1, e2, _) -> let v1 = eval e1 env in
-                        let v2 = eval e2 env in
-                         if v1 = Closure (x, body, env') then
-                          begin
-                            env := Env.begin_scope !env;
-                            Env.bind env' x v2;
-                            let res = eval body (ref env) in
-                            env := Env.end_scope !env;
-                            res
+                       let v2 = eval e2 env in
+                        (match v1 with
+                        | Closure (x, body, env') -> begin
+                          let closure_env = ref ( Env.begin_scope (Some !env')) in
+                          Env.bind !closure_env x v2;
+                          let res = eval body closure_env in
+                          env := Env.end_scope !env;
+                          res
                           end
-                        else
-                         failwith "Not a closure")
-
+                        | _ -> failwith "Not a closure"
+                         )
   | New(e, _) -> Ref(ref (eval e env))
   | Deref(e, _) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
   | Assign(x, e, _) ->

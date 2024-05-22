@@ -88,6 +88,12 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): typ =
                        env := Env.end_scope !env;
                        if t1 = NoneType then t1 else
                        FunType(StringType, t1)
+  | App (e1, e2, _) -> let t1 = typechecker e1 env in
+                        match t1 with
+                        | FunType (t0, tr) -> let t2 = typechecker e2 env in
+                                              if t2 != t0 then NoneType else
+                                                tr
+                        | _ -> NoneType
   | New(e,_) ->  RefType(typechecker e env)
   | Deref(e,_) ->
      (match typechecker e env with
