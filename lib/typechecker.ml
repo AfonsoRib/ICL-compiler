@@ -24,7 +24,7 @@ let rec str_typ = function
   | RefType t -> "Ref " ^ (str_typ t)
   | NoneType -> "None"
   | StringType -> "String"
-
+  | _ -> failwith "not implemented. implement functions"
 
 let eWithType e t n_e1 n_e2 =
   match e with
@@ -61,6 +61,8 @@ let eWithType e t n_e1 n_e2 =
   |Seq (e1,e2,_) ->  Seq(e1,e2,t)
   |UnitExp (_) ->  UnitExp(t)
   |String (s,_) ->  String(s,t)
+  |Fun (args,e1,_) -> Fun (args,e1,t)
+  |App(e1,args, _) -> App(e1,args,t)
 
 let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast.exp) =
   match e with
@@ -81,7 +83,6 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      in
      (match (t1,t2) with
       | (IntType, IntType) -> (IntType, eWithType e IntType n_e1 n_e2)
-      (* | (IntType, FloatType) | (FloatType, IntType) | (FloatType, FloatType) -> (FloatType, eWithType e FloatType n_e1 n_e2) *)
       | _ -> (NoneType, (eWithType e NoneType e1 e2)))
   | Addf (e1, e2, _) | Multf (e1, e2,_) | Subf (e1, e2,_) | Divf (e1, e2,_) ->
      let typecheck1 = typechecker e1 env and
@@ -224,3 +225,57 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                      (UnitType, Print(n_e1,UnitType))
   | UnitExp _-> (UnitType, UnitExp(UnitType))
   | String(s,_) -> (StringType, String(s, StringType))
+  | Fun (args,e1,_) ->
+     env := Env.begin_scope !env;
+     let rec bind_types lst =
+       match lst with
+       | [] -> ()
+       | (b,t)::bs -> 
+          Env.bind !env b t; bind_types bs
+     in
+     let rec get_types lst =
+       match lst with
+       | [] -> []
+       | (_,t)::ts -> t :: get_types ts
+     in
+     bind_types args;
+     let tpck1 = typechecker e1 env in
+     let t = fst tpck1 and
+         n_e1 = snd tpck1
+     in
+     let ts = get_types args in     
+     env := Env.end_scope !env;
+     (* print_endline (Ref.string_of_type t); *)
+     (* List.iter (fun x -> print_endline (Ref.string_of_type x ^ " ")) ts; *)
+     (FunType(ts,t),Fun(args,n_e1,FunType(ts,t)))
+  | App(e1,args, _) ->
+     let tpck = typechecker e1 env in
+     let f_type = fst tpck in
+     let rec typecheckArgs lst =
+       match lst with
+       | [] -> []
+       | e::es ->  typechecker e env :: typecheckArgs es 
+     in                  
+     let rec verify_args lst1 lst2 ret=
+       match lst1,lst2 with
+       | [],[] -> ret
+       | t1::t1s, t2::t2s ->
+          let t2_type = fst (t2) in
+          print_endline ("app_arg " ^ (Ref.string_of_type t2_type));
+          if t1 = t2_type then verify_args t1s t2s ret else NoneType
+       | _ -> NoneType (* failwith "function was given more or is missing more arguments than supposed" *)
+     in
+     let typecheckedArgs = typecheckArgs args in
+     match f_type with
+     | FunType(f_args, e_type) ->
+        (* List.iter (fun x -> print_endline ("farg " ^ Ref.string_of_type x)) f_args; *)
+        (* List.iter (fun x -> print_endline ("app-args " ^ Ref.string_of_type x)) verify_args; *)
+        (* print_endline ("fun_type " ^ (Ref.string_of_type e_type)); *)
+        (* print_endline ("app_type " ^(Ref.string_of_type f_type)); *)
+        let retArgs =  List.map snd typecheckedArgs in
+        if (verify_args f_args typecheckedArgs e_type) = e_type then
+        (e_type, App((snd tpck),retArgs, e_type))
+        else
+          (NoneType, App(e1,args, NoneType))
+     | _ -> (NoneType, App(e1,args, NoneType))
+

@@ -39,6 +39,8 @@ rule token = parse
   |"new" { NEW }
   |'!' { DEREF }
   |":=" { ASSIGN }
+  |"fun" { FUN}
+  |"->" { ARROW }
   |"while" { WHILE }
   |"do" { DO }
   |"end" { END }
@@ -50,6 +52,7 @@ rule token = parse
   |"print" { PRINT }
   |';' { SEMICOLON }
   |':' { COLON }
+  |',' { COMMA }
   |"()"{ UNIT }
   |"bool" { TYPE "bool" }
   |"int" { TYPE "int" }

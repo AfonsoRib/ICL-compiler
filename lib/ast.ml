@@ -26,7 +26,7 @@ type exp =
   |Id of string * typ
   |New of exp * typ
   |Deref of exp * typ
-  |Assign of exp * exp * typ (* primeira argumento do assign tem que mudar para expression? *)
+  |Assign of exp * exp * typ  
   |While of exp * exp * typ
   |IfThenElse of exp * exp * exp * typ
   |IfThen of exp * exp * typ
@@ -35,6 +35,9 @@ type exp =
   |Seq of exp * exp * typ
   |UnitExp of typ
   |String of string * typ
+  |Fun of (string * typ) list * exp * typ
+  |App of exp * exp list * typ
+
 
 type eval_result =
   | Int of int
@@ -42,6 +45,7 @@ type eval_result =
   | Bool of bool
   | Ref of eval_result ref
   | Str of string
+  | Closure of (string * typ) list * exp * eval_result environment option ref
   | Unit
 
 let rec string_of_eval_result = function
@@ -51,6 +55,7 @@ let rec string_of_eval_result = function
   | Unit -> "Unit"
   | Ref r ->  (string_of_eval_result !r ) ^ " ref"
   | Str s -> "String " ^ s
+  | Closure _ -> "Closure placeholder"
 
 let rec string_of_ref t contents_start contents_end typ =
   match t with
@@ -60,6 +65,7 @@ let rec string_of_ref t contents_start contents_end typ =
   | Int n -> "int" ^ typ ^ " = " ^ contents_start ^ string_of_int n ^ contents_end
   | Float f -> "float" ^ typ ^ " = " ^ contents_start ^ string_of_float f ^ contents_end
   | Str s -> "string" ^ typ ^ " = " ^ contents_start ^ s ^ contents_end
+  | Closure _ -> "Closure placeholder"
 
 let rec string_of_eval_result_clean = function
   | Int n -> string_of_int n
@@ -68,6 +74,7 @@ let rec string_of_eval_result_clean = function
   | Unit -> "Unit"
   | Ref r -> string_of_eval_result_clean !r
   | Str s -> s
+  | Closure _ -> "Closure placeholder"
 
 let rec eval (expr : exp) (env : eval_result environment option ref) : eval_result =
   let not_operation f x =
@@ -92,7 +99,6 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   let int_operation fint x y =
     match (x, y) with
     | (Int i1, Int i2) -> Int (fint i1 i2)
-
     | _ -> failwith "Type mismatch"
   in
   let float_operation ffloat x y =
@@ -165,3 +171,23 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
                   | _ -> failwith "not a boolean")
   | UnitExp _ -> Unit
   | String(s, _) -> Str s
+  | Fun(args, e1, _ ) ->
+     let n_env = ref (begin_scope !env) in
+     Closure(args, e1, n_env)
+  | App (e1,args,_) ->
+     let clsr = eval e1 env in
+     match clsr with
+     | Closure (clsr_args, clsr_e, clsr_env ) ->
+                  let rec add_to_env (bindings : (string*typ) list) (vals : exp list) (n_env : eval_result environment option) =
+                    match bindings, vals with
+                    | [], [] -> ()
+                    | (bind, _)::binds, e::es -> let v = (eval e (ref n_env)) in
+                                           Env.bind n_env bind v;
+                                           add_to_env binds es n_env
+                    | _ -> failwith "size mismatch"
+                  in
+                  add_to_env clsr_args args !clsr_env;
+                  let res = eval clsr_e clsr_env in
+                  clsr_env := Env.end_scope !clsr_env;
+                  res
+     | _ -> failwith "not a closure"

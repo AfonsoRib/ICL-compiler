@@ -39,9 +39,17 @@
 %token SEMICOLON
 %token UNIT
 %token COLON
+%token FUN
+%token ARROW
 %token<string> TYPE
+%token COMMA
 %type <string list> type_refs_list
 
+
+/* %left ARROW */
+/* %left FUN */
+/* %left ID */
+/* %left COMMA */
 %left SEMICOLON
 %left PLUS
 %left MINUS
@@ -66,7 +74,7 @@
 %left IN
 %left PRINT
 %left PRINTLN
-
+%left LPAR
 %start <Ast.exp> start
 %%
 
@@ -147,7 +155,30 @@ exp:
   | UNIT
     { UnitExp(Types.NoneType) }
   | s=STRING
-    {String(s, Types.NoneType)}
+    { String(s, Types.NoneType) }
+  | FUN a=arg_list ARROW e=exp END
+    { Fun(a, e, Types.NoneType) }
+  | e1=exp LPAR args=app_arguments_list RPAR
+    { App(e1,args,Types.NoneType)}
+
+/* lpar e rpar entra em conflito app_arguments_list com só um argumento. foi resolvido com %left LPAR */
+/* (fun x : int -> x end)() não funciona porque reconhece o segundo como unit mas (fun x : int -> x end)( ) já reconhece porque tem um espaço no centro*/
+app_arguments_list:
+  | { [] }
+  | app_list {$1}
+
+app_list:
+  | exp {[$1]}
+  | app_list COMMA exp {$1 @ [$3]}
+
+arg:
+  | id=ID COLON t=type_refs_list
+    { (id, Typechecker.typ_str (List.rev t)) }
+
+arg_list:
+  | {[]}
+  | arg_list arg
+    {$1 @ [$2]}
 
 type_refs_list:
     | TYPE
@@ -166,3 +197,4 @@ binding:
     { (id, e, Types.NoneType) }
   | id=ID COLON type_refs_list EQ  e=exp
     { (id, e, Typechecker.typ_str (List.rev $3)) }
+

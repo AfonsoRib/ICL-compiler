@@ -11,12 +11,11 @@ let type_to_string t=
   | IntType -> "I"
   | FloatType -> "F"
   | BoolType -> "Z"
-  (* | _ -> failwith "not supported" *)
   | UnitType -> "unit"
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "Ljava/lang/String;"
-
+  | _ -> failwith "not supported"
 
 let gen_frame bindings env =
   let rec gen_fields n bindings =

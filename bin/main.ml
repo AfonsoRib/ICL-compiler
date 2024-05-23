@@ -19,6 +19,7 @@ let main =
       | Ref _ -> printf "- : %s\n" (Ast.string_of_ref res "" "" ""); flush stdout
       | Unit -> print_endline "- : unit = ()"; flush stdout
       | Str s -> printf "- : string = %s\n" s; flush stdout
+      | Closure _ -> printf "- : closure = todo\n" ; flush stdout
     with | Failure msg -> print_endline msg
          |_-> print_endline "Syntax error!"
   done

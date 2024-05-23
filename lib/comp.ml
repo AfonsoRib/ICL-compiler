@@ -86,8 +86,8 @@ let getSubExprType e =
   |Seq (_,_,t) -> t
   |UnitExp (t) -> t
   |String (_ ,t) -> t
-
-
+  |Fun(_,_,t) -> t
+  |App(_,_,t) -> t
   
 let jvmString i =
   "\t" ^ (match i with
@@ -285,3 +285,4 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
        Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
+  | _ -> [Nop]
