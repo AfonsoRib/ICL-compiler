@@ -226,12 +226,12 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
   | UnitExp _-> (UnitType, UnitExp(UnitType))
   | String(s,_) -> (StringType, String(s, StringType))
   | Fun (args,e1,_) ->
-     env := Env.begin_scope !env;
+     let env0 = ref (Env.begin_scope !env) in
      let rec bind_types lst =
        match lst with
        | [] -> ()
        | (b,t)::bs -> 
-          Env.bind !env b t; bind_types bs
+          Env.bind !env0 b t; bind_types bs
      in
      let rec get_types lst =
        match lst with
@@ -239,15 +239,16 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
        | (_,t)::ts -> t :: get_types ts
      in
      bind_types args;
-     let tpck1 = typechecker e1 env in
+     let tpck1 = typechecker e1 env0 in
      let t = fst tpck1 and
          n_e1 = snd tpck1
      in
      let ts = get_types args in     
-     env := Env.end_scope !env;
-     (* print_endline (Ref.string_of_type t); *)
-     (* List.iter (fun x -> print_endline (Ref.string_of_type x ^ " ")) ts; *)
-     (FunType(ts,t),Fun(args,n_e1,FunType(ts,t)))
+     env0 := Env.end_scope !env0;
+     if(t == NoneType) then
+       (t,Fun(args,n_e1,t))
+     else
+       (FunType(ts,t),Fun(args,n_e1,FunType(ts,t)))
   | App(e1,args, _) ->
      let tpck = typechecker e1 env in
      let f_type = fst tpck in
@@ -261,7 +262,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
        | [],[] -> ret
        | t1::t1s, t2::t2s ->
           let t2_type = fst (t2) in
-          print_endline ("app_arg " ^ (Ref.string_of_type t2_type));
+          (* print_endline ("app_arg " ^ (Ref.string_of_type t2_type)); *)
           if t1 = t2_type then verify_args t1s t2s ret else NoneType
        | _ -> NoneType (* failwith "function was given more or is missing more arguments than supposed" *)
      in

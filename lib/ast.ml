@@ -172,12 +172,11 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | UnitExp _ -> Unit
   | String(s, _) -> Str s
   | Fun(args, e1, _ ) ->
-     let n_env = ref (begin_scope !env) in
-     Closure(args, e1, n_env)
+     Closure(args, e1, env)
   | App (e1,args,_) ->
      let clsr = eval e1 env in
      match clsr with
-     | Closure (clsr_args, clsr_e, clsr_env ) ->
+     | Closure (clsr_args, clsr_body, clsr_env) ->
                   let rec add_to_env (bindings : (string*typ) list) (vals : exp list) (n_env : eval_result environment option) =
                     match bindings, vals with
                     | [], [] -> ()
@@ -186,8 +185,9 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
                                            add_to_env binds es n_env
                     | _ -> failwith "size mismatch"
                   in
-                  add_to_env clsr_args args !clsr_env;
-                  let res = eval clsr_e clsr_env in
-                  clsr_env := Env.end_scope !clsr_env;
-                  res
+                    clsr_env := Env.begin_scope !clsr_env;
+                    add_to_env clsr_args args !clsr_env;
+                    let res = eval clsr_body clsr_env in
+                    clsr_env := Env.end_scope !clsr_env;
+                    res
      | _ -> failwith "not a closure"

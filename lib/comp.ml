@@ -282,7 +282,33 @@ let rec comp (expression : exp) (env : int environment option ref) : jvm list =
      in
      let c1 = comp e1 env in
      let t1 = getSubExprType e1 in
-       Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
+     Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
+  | Fun (args, body, t) ->
+
+  let body_t = match t with
+    | Types.FunType(_,t1) -> t1
+    | _ -> failwith "Fun type error"
+    in
+  let n_env = ref (begin_scope !env )in
+    let rec aux args n n_env =
+        match args with
+        | [] -> ()
+        | (id, _)::rest ->
+             Env.bind n_env id n;
+             aux rest (n+1) n_env
+    in
+    aux args 0 !n_env;
+  let compiled_body = comp body n_env in
+  let list_compiled_body = List.map (fun x -> jvmString x) compiled_body in
+  ignore(Closure.gen_closure args !env body_t frame_n list_compiled_body);
+  [Nop]
+
+
+(*   | App(e1, args, _) -> *)
+  (* gerar env aqui *)
+
+
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
+
   | _ -> [Nop]

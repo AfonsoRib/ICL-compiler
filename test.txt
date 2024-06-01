@@ -1,1 +1,1 @@
-print (1+1)
+(fun x: int -> (let y=1 in (y+x)) end)

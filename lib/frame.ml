@@ -11,7 +11,7 @@ let type_to_string t=
   | IntType -> "I"
   | FloatType -> "F"
   | BoolType -> "Z"
-  | UnitType -> "unit"
+  | UnitType -> "Ljava/lang/Object;"
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "Ljava/lang/String;"
@@ -45,4 +45,35 @@ let gen_frame bindings env =
   and oc = open_out ("frame_"^ frame_number ^".j") in
   List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
   fn
+
+let gen_frame_args bindings env =
+  let rec gen_fields n bindings =
+    match bindings with
+    | [] -> []
+    | (_,t)::rest ->
+       let field = Printf.sprintf ".field public loc_%d %s" n (type_to_string t) in
+       field :: gen_fields (n+1) rest
+  in
+  let fields = gen_fields 0 bindings in
+  let constructor = [
+      ".method public <init>()V";
+      "aload 0";
+      "invokenonvirtual java/lang/Object/<init>()V";
+      "return";
+      ".end method"
+    ] in
+  let fn = gen_number_frame () in
+  let frame_number = string_of_int (fn)  in
+  let f = (".class public frame_" ^ frame_number)  ::
+            ".super java/lang/Object" ::
+              (".field public SL " ^ if env = None
+                                   then "Ljava/lang/Object;"
+                                   else "Lframe_" ^ string_of_int((!counter_frames) - 2) ^ ";")
+ ::
+                fields @ constructor
+  and oc = open_out ("frame_"^ frame_number ^".j") in
+  List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
+  fn
+
+
 

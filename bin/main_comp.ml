@@ -18,6 +18,12 @@ let preamble =
 \t.limit stack 256
 "
 
+(* let print_position outx lexbuf = *)
+(*   let pos = lexbuf.lex_curr_p in *)
+(*   Printf.fprintf outx "File \"%s\", line %d, character %d:\n" *)
+(*     pos.pos_fname *)
+(*     pos.pos_lnum *)
+(*     (pos.pos_cnum - pos.pos_bol + 1) *)
 
 let main =
   let filename = "test.txt" in (* Specify your input file name here *)
@@ -37,6 +43,9 @@ let main =
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;
     output_string outchannel footer
   with | Failure msg -> print_endline msg
+       (* | Parser.Error -> *)
+       (*    print_position stderr lexbuf; *)
+       (*    prerr_endline "Syntax error"; *)
        | _ -> print_endline "Syntax error!"
 
 let () =
