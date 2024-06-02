@@ -1,1 +1,1 @@
-(fun x: int -> (let y=1 in (y+x)) end)
+let x = 1 in (let y = 2 in (let z = 3 in (print (x+y+z))))

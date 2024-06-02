@@ -1,6 +1,6 @@
 type 'a environment = {
-    table : (string, 'a) Hashtbl.t;
-    prev : 'a environment option;
+  table : (string, 'a) Hashtbl.t;
+  prev : 'a environment option;
 }
 
 
@@ -17,16 +17,16 @@ let rec find (env : 'a environment option) id =
   match env with
   | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
-               | Some v ->  v
-               | None -> find ev.prev id
+    | Some v ->  v
+    | None -> find ev.prev id
 
 
 let rec findEnv (env : 'a environment option) id jmps=
   match env with
   | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
-               | Some _ ->  jmps 
-               | None -> findEnv ev.prev id jmps+1
+    | Some _ ->  jmps 
+    | None -> findEnv ev.prev id jmps+1
 
 let begin_scope (prev : 'a environment option) : ('a environment option) = Some (create_environment prev)
 
@@ -34,5 +34,5 @@ let end_scope (env : 'a environment option) =
   match env with
   | None -> failwith "environment does not have previous environment"
   | Some v -> match v.prev with
-              | Some prev_environment -> Some (prev_environment)
-              | None -> None
+    | None -> None
+    | Some p -> Some p

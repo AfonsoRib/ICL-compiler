@@ -1,4 +1,13 @@
 open Types
+
+type 'a frame_env = {
+  table: (string, 'a) Hashtbl.t;
+  prev: 'a frame_env option;
+  types: Types.typ list ref;
+  n_fields: int ref;
+  id: int;
+}
+
 let counter_frames = ref 0
 
 let gen_number_frame () =
@@ -17,63 +26,96 @@ let type_to_string t=
   | StringType -> "Ljava/lang/String;"
   | _ -> failwith "not supported"
 
-let gen_frame bindings env =
-  let rec gen_fields n bindings =
+
+let create_frame_from_types t_list old_frame  =
+  let types = ref (t_list) in
+  let n_fields = ref (List.length t_list) in
+  let id = gen_number_frame () in
+  let table = Hashtbl.create 10 in
+  {table; prev = old_frame; types; n_fields; id}
+
+let create_frame_from_binds bindings old_frame =
+  let rec get_types_list bindings =
     match bindings with
     | [] -> []
     | (_,_,t)::rest ->
-       let field = Printf.sprintf ".field public loc_%d %s" n (type_to_string t) in
-       field :: gen_fields (n+1) rest
+      t :: get_types_list rest
   in
-  let fields = gen_fields 0 bindings in
+  let types = ref (get_types_list bindings) in
+  let n_fields = ref (List.length bindings) in
+  let id = gen_number_frame () in
+  let table = Hashtbl.create 10 in
+  {table; prev = old_frame; types; n_fields; id}
+
+let create_frame old_frame =
+  let types = ref([]) in
+  let n_fields = ref 0 in
+  let id = gen_number_frame () in
+  let table = Hashtbl.create 10 in
+  {table; prev = old_frame; types; n_fields; id}
+
+let create_frame_file frame =
+  let preamble = [
+    ".class public frame_" ^ string_of_int frame.id;
+    ".super java/lang/Object";
+    if frame.prev = None
+    then ".field public SL Ljava/lang/Object;"
+    else
+      ".field public SL Lframe_" ^ string_of_int (Option.get(frame.prev)).id ^ ";"
+  ] in
   let constructor = [
-      ".method public <init>()V";
-      "aload 0";
-      "invokenonvirtual java/lang/Object/<init>()V";
-      "return";
-      ".end method"
-    ] in
-  let fn = gen_number_frame () in
-  let frame_number = string_of_int (fn)  in 
-  let f = (".class public frame_" ^ frame_number)  ::
-            ".super java/lang/Object" ::
-              (".field public SL " ^ if env = None
-                                   then "Ljava/lang/Object;"
-                                   else "Lframe_" ^ string_of_int((!counter_frames) - 2) ^ ";")
- ::
-                fields @ constructor
-  and oc = open_out ("frame_"^ frame_number ^".j") in
-  List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
-  fn
-
-let gen_frame_args bindings env =
-  let rec gen_fields n bindings =
-    match bindings with
-    | [] -> []
-    | (_,t)::rest ->
-       let field = Printf.sprintf ".field public loc_%d %s" n (type_to_string t) in
-       field :: gen_fields (n+1) rest
-  in
-  let fields = gen_fields 0 bindings in
-  let constructor = [
-      ".method public <init>()V";
-      "aload 0";
-      "invokenonvirtual java/lang/Object/<init>()V";
-      "return";
-      ".end method"
-    ] in
-  let fn = gen_number_frame () in
-  let frame_number = string_of_int (fn)  in
-  let f = (".class public frame_" ^ frame_number)  ::
-            ".super java/lang/Object" ::
-              (".field public SL " ^ if env = None
-                                   then "Ljava/lang/Object;"
-                                   else "Lframe_" ^ string_of_int((!counter_frames) - 2) ^ ";")
- ::
-                fields @ constructor
-  and oc = open_out ("frame_"^ frame_number ^".j") in
-  List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc;
-  fn
+    ".method public <init>()V";
+    "aload 0";
+    "invokenonvirtual java/lang/Object/<init>()V";
+    "return";
+    ".end method"
+  ] in
+  let types = ref(List.map type_to_string !(frame.types)) in
+  let fields = List.mapi (fun i t -> ".field public loc_" ^ string_of_int i ^ " " ^ t) !types in
+  let f = preamble @ fields @ constructor in
+  let oc = open_out ("frame_"^ string_of_int frame.id ^".j") in
+  List.iter (fun x -> Printf.fprintf oc "%s\n" x) f; close_out oc
 
 
+let bind (env : 'a frame_env option) (id : string) (value : 'a) (t : Types.typ) =
+  match env with
+  | None -> failwith "cannot bind value to null hashtable"
+  | Some v -> Hashtbl.add v.table id value; 
+              v.n_fields := !(v.n_fields) + 1;
+              v.types := !(v.types) @ [t]
+              
 
+let rec find (env : 'a frame_env option) id =
+  match env with
+  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | Some ev -> match Hashtbl.find_opt ev.table id with
+    | Some v ->  v
+    | None -> find ev.prev id
+
+let rec findJumpLocation (env : 'a frame_env option) id jmps=
+  match env with
+  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | Some ev -> match Hashtbl.find_opt ev.table id with
+    | Some v ->  (jmps, v)
+    | None -> findJumpLocation ev.prev id (jmps+1)
+
+let rec findFrame (env : 'a frame_env option) id=
+  match env with
+  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | Some ev -> match Hashtbl.find_opt ev.table id with
+    | Some _ ->  ev.id
+    | None -> findFrame ev.prev id
+
+let begin_scope (prev : 'a frame_env option) : ('a frame_env option) = 
+  match prev with
+  | None -> Some(create_frame prev)
+  | Some v ->
+    let types = v.types in 
+    Some (create_frame_from_types !types prev)
+
+let end_scope (env : 'a frame_env option) =
+  match env with
+  | None -> failwith "environment does not have previous environment"  
+  | Some v -> match v.prev with
+    | None -> None
+    | Some p -> Some p

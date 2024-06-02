@@ -1,11 +1,11 @@
-let counter_closures = ref 0
+(* let counter_closures = ref 0
 
 let gen_number_closure () =
   let n = !counter_closures in
   counter_closures := n + 1;
   n
 
-let gen_closure args env clsr_t frame_n body=
+let gen_closure args env clsr_t frame_n=
   let rec gen_fields n bindings =
     match bindings with
     | [] -> []
@@ -24,11 +24,10 @@ let gen_closure args env clsr_t frame_n body=
     let clsr = gen_number_closure () in
   let class_name = Printf.sprintf "Closure_%d" clsr in
   let apply =
-    (".method public apply()" ^ (Frame.type_to_string (clsr_t)))
-                               :: body
-                               (* TODO if unit then return null *)
-                               @ [ "return";
-                               ".end method"]
+    (".method public apply(" ^ sprint ^ ")" ^ (Frame.type_to_string (clsr_t))) ::
+    (* TODO codigo aqui*)
+                               (* @ [ "return"; *)
+                               [".end method"]
   in
     let c = [
       ".class public " ^ class_name;
@@ -40,4 +39,4 @@ let gen_closure args env clsr_t frame_n body=
   let oc = open_out (class_name ^ ".j") in
   List.iter (fun x -> Printf.fprintf oc "%s\n" x) c;
   close_out oc;
-  clsr
+  clsr *)

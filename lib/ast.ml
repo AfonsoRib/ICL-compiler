@@ -126,68 +126,68 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Lt (e1, e2, _) -> Bool(inequality_operation (<) (eval e1 env) (eval e2 env))
   | Gt (e1, e2, _) -> Bool(inequality_operation (>) (eval e1 env) (eval e2 env))
   | And (e1,e2,_) -> let ex = eval e1 env in
-                    if ex = Bool false then ex else Bool(boolean_operation (&&) ex (eval e2 env))
+    if ex = Bool false then ex else Bool(boolean_operation (&&) ex (eval e2 env))
   | Or (e1,e2,_) -> let ex = eval e1 env in
-                  if ex = Bool true then ex else Bool(boolean_operation (||) ex (eval e2 env))
+    if ex = Bool true then ex else Bool(boolean_operation (||) ex (eval e2 env))
   | Not (e1, _) -> Bool(not_operation (not) (eval e1 env))
   | Let (binds, e, _) ->
-     let rec add_to_env (bindings : (string * exp * typ) list) (n_env : eval_result environment option) =
-       match bindings with
-       | [] -> ()
-       | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in
-                           Env.bind n_env id v;
-                           add_to_env rest n_env
-     in
-     env := Env.begin_scope !env;
-     add_to_env binds (!env);
-     let res = eval e env in
-     env := Env.end_scope !env;
-     res
+    let rec add_to_env (bindings : (string * exp * typ) list) (n_env : eval_result environment option) =
+      match bindings with
+      | [] -> ()
+      | (id, e1, _)::rest -> let v = (eval e1 (ref n_env)) in
+        Env.bind n_env id v;
+        add_to_env rest n_env
+    in
+    env := Env.begin_scope !env;
+    add_to_env binds (!env);
+    let res = eval e env in
+    env := Env.end_scope !env;
+    res
   | New(e, _) -> Ref(ref (eval e env))
   | Deref(e, _) -> (let result = (eval e env) in match result with Ref r -> !r | _ -> failwith "Not a reference")
   | Assign(x, e, _) ->
-     let
-       (* ref_result = Env.find !env x and *)
-       ref_result = eval x env and
-       value_to_assign = eval e env in
-     (match ref_result with
-      | Ref r -> r := value_to_assign
-      | _ -> failwith "Left-hand side of assignment must be a reference")
-     ; Unit
+    let
+      (* ref_result = Env.find !env x and *)
+      ref_result = eval x env and
+    value_to_assign = eval e env in
+    (match ref_result with
+     | Ref r -> r := value_to_assign
+     | _ -> failwith "Left-hand side of assignment must be a reference")
+  ; Unit
   | While(e1,e2, _) -> while (match (eval e1 env) with Bool b -> b | _ -> failwith "not a boolean") do
-                     ignore(eval e2 env)
-                    done;
-                    Unit
+      ignore(eval e2 env)
+    done;
+    Unit
   | PrintLn(e, _) -> print_endline (string_of_eval_result_clean (eval e env));
-                  Unit
+    Unit
   | Print(e, _) -> print_string (string_of_eval_result_clean (eval e env));
-                Unit
+    Unit
   | Seq(e1,e2, _) -> ignore(eval e1 env); eval e2 env
   | IfThenElse(e1,e2,e3, _) -> (match (eval e1 env) with
-                  | Bool b -> if b then eval e2 env else eval e3 env
-                  | _ -> failwith "not a boolean")
+      | Bool b -> if b then eval e2 env else eval e3 env
+      | _ -> failwith "not a boolean")
   | IfThen(e1,e2, _ ) -> (match (eval e1 env) with
-                  | Bool b -> if b then eval e2 env else Unit
-                  | _ -> failwith "not a boolean")
+      | Bool b -> if b then eval e2 env else Unit
+      | _ -> failwith "not a boolean")
   | UnitExp _ -> Unit
   | String(s, _) -> Str s
   | Fun(args, e1, _ ) ->
-     Closure(args, e1, env)
+    Closure(args, e1, env)
   | App (e1,args,_) ->
-     let clsr = eval e1 env in
-     match clsr with
-     | Closure (clsr_args, clsr_body, clsr_env) ->
-                  let rec add_to_env (bindings : (string*typ) list) (vals : exp list) (n_env : eval_result environment option) =
-                    match bindings, vals with
-                    | [], [] -> ()
-                    | (bind, _)::binds, e::es -> let v = (eval e (ref n_env)) in
-                                           Env.bind n_env bind v;
-                                           add_to_env binds es n_env
-                    | _ -> failwith "size mismatch"
-                  in
-                    clsr_env := Env.begin_scope !clsr_env;
-                    add_to_env clsr_args args !clsr_env;
-                    let res = eval clsr_body clsr_env in
-                    clsr_env := Env.end_scope !clsr_env;
-                    res
-     | _ -> failwith "not a closure"
+    let clsr = eval e1 env in
+    match clsr with
+    | Closure (clsr_args, clsr_body, clsr_env) ->
+      let rec add_to_env (bindings : (string*typ) list) (vals : exp list) (n_env : eval_result environment option) =
+        match bindings, vals with
+        | [], [] -> ()
+        | (bind, _)::binds, e::es -> let v = (eval e (ref n_env)) in
+          Env.bind n_env bind v;
+          add_to_env binds es n_env
+        | _ -> failwith "size mismatch"
+      in
+      clsr_env := Env.begin_scope !clsr_env;
+      add_to_env clsr_args args !clsr_env;
+      let res = eval clsr_body clsr_env in
+      clsr_env := Env.end_scope !clsr_env;
+      res
+    | _ -> failwith "not a closure"
