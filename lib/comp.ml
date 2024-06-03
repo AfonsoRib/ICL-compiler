@@ -302,12 +302,14 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     env := Frame.end_scope !env;
     [NewJvm closure_classname;
      Dup;
+     Invokespecial (closure_classname ^ "/<init>()V");
+     Dup;
      Aload 0;
      Putfield (closure_classname^"/SL", 
-     if !env = None then
-       "Ljava/lang/Object;"
-     else
-       "Lframe_" ^ string_of_int (Option.get !env).id ^ ";");
+               if !env = None then
+                 "Ljava/lang/Object;"
+               else
+                 "Lframe_" ^ string_of_int (Option.get !env).id ^ ";");
     ]
   | App(e1, args, _) -> 
     let subExprType = (getSubExprType e1) in
