@@ -58,7 +58,7 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) co
   let apply = [
     ".method public apply(" ^ (String.concat "" fields) ^ ")" ^ (Frame.type_to_string clsrt_t);
     ".limit locals " ^ (string_of_int ((List.length args) + 3));
-    ".limit locals 20";
+    ".limit stack 256";
     "new frame_" ^ (string_of_int (Option.get cur_frame).id);
     "dup";
     "invokespecial frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/<init>()V";
