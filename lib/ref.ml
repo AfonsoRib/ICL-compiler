@@ -10,7 +10,8 @@ let rec string_of_type t =
   | NoneType -> "none"
   | StringType -> "string"
   | FunType _ -> "function"
-let string_of_ref_subtype t =
+
+  let string_of_ref_subtype t =
   let aux t1 =
     match t1 with
       | RefType r -> "Lref_" ^ string_of_type r ^ ";"

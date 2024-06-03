@@ -49,6 +49,7 @@ type jvm =
   | Checkcast of string
   | Pop
   | Getstatic of string * string
+  | Invokeinterface of string * int
 
 
 let getSubExprType e =
@@ -129,6 +130,7 @@ let jvmString i =
       | Checkcast s -> "checkcast " ^ s
       | Pop -> "pop"
       | Getstatic(s1,s2) -> "getstatic " ^ s1 ^ " " ^ s2
+      | Invokeinterface (f,n_args) -> "invokeinterface " ^ f ^ " " ^ (string_of_int n_args)
     )
 
 let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm list =
@@ -137,7 +139,6 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
   | FloatFact (f, _) -> [Ldc (string_of_float f)]
   | Statement (b, _) -> if b then [Sipush 1] else [Sipush 0]
   | Id (id, t) ->
-    print_endline "Id";
     let temp = Frame.findJumpLocation !env id 0 in
     let jmps = fst temp in
     let loc_i = snd temp in
@@ -150,10 +151,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
         let prev = Option.get (n_env.prev) in
         Getfield("frame_" ^ string_of_int (n_env.id) ^ "/SL", "Lframe_" ^ string_of_int (prev.id) ^ ";" ) :: aux (jmps-1) prev
     in 
-    print_endline "before intermidiate";
-    
     let intermidiate = aux jmps (Option.get (!env)) in
-    print_endline "after intermidiate";
     Aload 0
     ::  intermidiate @
     [Getfield ("frame_" ^ string_of_int (frame_i) ^ "/loc_" ^ string_of_int loc_i, Frame.type_to_string t);]
@@ -201,27 +199,18 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     in
     c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop]
   | Let (binds, body, _ ) ->
-    (* let frame = Frame.create_frame_from_binds binds !env in *)
-    
     env := Frame.begin_scope !env;
-    
-    print_endline "entered new scope";
     let var_counter = ref 0 in
     let vars = List.map (fun (id, e1, t) ->
-        print_endline "Var";
         let frame = Option.get !env in
         let c1 = comp e1 env in
-        print_endline "Var compiled";
         let loc = !var_counter in
         var_counter := !var_counter + 1;
         Frame.bind !env id loc t;
         Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)]
       ) binds in
-    print_endline "Vars created";
     let res = comp body env in
-    print_endline "Body compiled";
     let frame_id = (Option.get !env).id in
-    print_endline "Frame id";
     let frame_string = "frame_" ^ string_of_int frame_id in
     Frame.create_frame_file (Option.get (!env));
     env := Frame.end_scope !env;
@@ -295,32 +284,49 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let c1 = comp e1 env in
     let t1 = getSubExprType e1 in
     Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
-  (* | Fun (args, body, t) ->
-
-     let body_t = match t with
+  | Fun(args, body, t) ->    
+    let clsr_t = match t with
       | Types.FunType(_,t1) -> t1
       | _ -> failwith "Fun type error"
-     in
-     let n_env = ref (begin_scope !env )in
-     let rec aux args n n_env =
-      match args with
-      | [] -> ()
-      | (id, _)::rest ->
-        Env.bind n_env id n;
-        aux rest (n+1) n_env
-     in
-     aux args 0 !n_env;
-     let compiled_body = comp body n_env in
-     let list_compiled_body = List.map (fun x -> jvmString x) compiled_body in
-     ignore(Closure.gen_closure args !env body_t frame_n list_compiled_body);
-     [Nop] *)
+    in
+    let args_t = List.map (fun (_,t) -> t ) args in
+    env := Frame.begin_scope !env;
+    (*TODO create frame file*)
+    let counter = ref 0 in
+    List.iter (fun (id, t) -> Frame.bind !env id !counter t; counter := !counter + 1) args;
+    Frame.create_frame_file (Option.get !env);
+    let compiled_body = comp body env in
+    let compiled_body_str = List.map jvmString compiled_body in
 
-
-  (*   | App(e1, args, _) -> *)
-  (* gerar env aqui *)
-
-
+    let closure_classname = Closure.create_closure_file args_t clsr_t !env compiled_body_str in
+    env := Frame.end_scope !env;
+    [NewJvm closure_classname;
+     Dup;
+     Aload 0;
+     Putfield (closure_classname^"/SL", 
+     if !env = None then
+       "Ljava/lang/Object;"
+     else
+       "Lframe_" ^ string_of_int (Option.get !env).id ^ ";");
+    ]
+  | App(e1, args, _) -> 
+    let subExprType = (getSubExprType e1) in
+    let args_t = match subExprType with
+      | Types.FunType(args_t,_) -> args_t
+      | _ -> failwith "Not Fun_type in App"
+    in
+    let ret_type = match subExprType with
+      | Types.FunType(_,ret) -> ret
+      | _ -> failwith "Not Fun_type in App ret"
+    in 
+    let interface_name = "closure_interface_" ^
+                         String.concat "_" (List.map Ref.string_of_type  args_t)
+                         ^ "_" ^ Ref.string_of_type ret_type in
+    let c1 = comp e1 env in
+    let c2 = List.flatten (List.map (fun x -> comp x env) args) in
+    c1 @ c2 @ 
+    [Invokeinterface (interface_name ^ "/apply(" ^ (String.concat "" (List.map Frame.type_to_string args_t)) ^ ")" ^ Frame.type_to_string ret_type,(List.length args) +1 )]
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [Nop]          (* criar uma classe para units *)
 
-  | _ -> [Nop]
+(* | _ -> [Nop] *)
