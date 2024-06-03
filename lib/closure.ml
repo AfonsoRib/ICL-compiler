@@ -56,7 +56,7 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) co
   let comp_fields  = List.flatten comp_fields_intermediate
   in
   let apply = [
-    ".method public apply(" ^ (String.concat "" fields) ^ ")" ^ (Frame.type_to_string clsrt_t);
+    ".method public abstract apply(" ^ (String.concat "" fields) ^ ")" ^ (Frame.type_to_string clsrt_t);
     ".limit locals " ^ (string_of_int ((List.length args) + 3));
     ".limit locals 20";
     "new frame_" ^ (string_of_int (Option.get cur_frame).id);
