@@ -152,7 +152,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
         Getfield("frame_" ^ string_of_int (n_env.id) ^ "/SL", "Lframe_" ^ string_of_int (prev.id) ^ ";" ) :: aux (jmps-1) prev
     in 
     let intermidiate = aux jmps (Option.get (!env)) in
-    Aload 0
+    Aload !((Option.get (!env)).depth) (* este aload deve variar dependendo da closure onde é aplicado*)
     ::  intermidiate @
     [Getfield ("frame_" ^ string_of_int (frame_i) ^ "/loc_" ^ string_of_int loc_i, Frame.type_to_string t);]
 
@@ -291,7 +291,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     in
     let args_t = List.map (fun (_,t) -> t ) args in
     env := Frame.begin_scope !env;
-    (*TODO create frame file*)
+    Frame.set_depth  (Option.get (!env)) ((List.length args) +1);
     let counter = ref 0 in
     List.iter (fun (id, t) -> Frame.bind !env id !counter t; counter := !counter + 1) args;
     Frame.create_frame_file (Option.get !env);

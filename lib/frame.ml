@@ -6,6 +6,7 @@ type 'a frame_env = {
   types: Types.typ list ref;
   n_fields: int ref;
   id: int;
+  depth: int ref;
 }
 
 let counter_frames = ref 0
@@ -26,13 +27,16 @@ let type_to_string t=
   | StringType -> "Ljava/lang/String;"
   | _ -> failwith "not supported"
 
+  let set_depth frame depth =
+    frame.depth := depth
 
 let create_frame_from_types t_list old_frame  =
   let types = ref (t_list) in
   let n_fields = ref (List.length t_list) in
   let id = gen_number_frame () in
   let table = Hashtbl.create 10 in
-  {table; prev = old_frame; types; n_fields; id}
+  let depth = ref 0 in
+  {table; prev = old_frame; types; n_fields; id; depth}
 
 let create_frame_from_binds bindings old_frame =
   let rec get_types_list bindings =
@@ -45,14 +49,16 @@ let create_frame_from_binds bindings old_frame =
   let n_fields = ref (List.length bindings) in
   let id = gen_number_frame () in
   let table = Hashtbl.create 10 in
-  {table; prev = old_frame; types; n_fields; id}
+  let depth = ref 0 in
+  {table; prev = old_frame; types; n_fields; id; depth}
 
 let create_frame old_frame =
   let types = ref([]) in
   let n_fields = ref 0 in
   let id = gen_number_frame () in
   let table = Hashtbl.create 10 in
-  {table; prev = old_frame; types; n_fields; id}
+  let depth = ref 0 in
+  {table; prev = old_frame; types; n_fields; id; depth}
 
 let create_frame_file frame =
   let preamble = [
