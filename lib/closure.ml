@@ -20,7 +20,7 @@ let create_interface args ret name =
   close_out oc;
   ()
 
-let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) compiled_body=
+let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) class_name compiled_body=
   let interface_name = "closure_interface_" ^
                        String.concat "_" (List.map Ref.string_of_type args)
                        ^ "_" ^ Ref.string_of_type clsrt_t in
@@ -31,8 +31,6 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) co
     | Some f -> "Lframe_" ^ string_of_int f.id ^ ";" in
   (* let cur_frame_str = "Lframe_" ^ string_of_int (Option.get cur_frame).id ^ ";" in *)
   let fields = List.map (fun t -> Frame.type_to_string t) args in
-  let clsr_n = gen_number_closure () in
-  let class_name = Printf.sprintf "closure_%d" clsr_n in
   let preamble= [
     ".class public " ^ class_name;
     ".super java/lang/Object";
@@ -65,7 +63,10 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) co
     "dup";
     "aload 0";
     (* todo isto está mal. tem que pôr no frame anterior caso existe. caso não apenas fazer put field *)
-    (* "getfield " ^ class_name ^ "/SL " ^ prev_frame_str; *)
+    if prev_frame <> None then
+    "getfield " ^ class_name ^ "/SL " ^ prev_frame_str
+    else
+      "";
     "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/SL " ^ prev_frame_str;
 
   ] @ 
@@ -87,9 +88,9 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) co
   in
   let file = List.flatten [preamble; constructor; apply] in
   let file_str = String.concat "\n" file in
-  let file_name = Printf.sprintf "closure_%d.j" clsr_n in
+  let file_name = Printf.sprintf "%s.j" class_name in
   let oc = open_out file_name in
   Printf.fprintf oc "%s" file_str;
   close_out oc;
-  class_name
+  ()
 

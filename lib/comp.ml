@@ -295,22 +295,23 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let counter = ref 0 in
     List.iter (fun (id, t) -> Frame.bind !env id !counter t; counter := !counter + 1) args;
     Frame.create_frame_file (Option.get !env);
+    let clsr_n = Closure.gen_number_closure () in
+    let closure_classname = Printf.sprintf "closure_%d" clsr_n in
     let compiled_body = comp body env in
     let compiled_body_str = List.map jvmString compiled_body in
-
-    let closure_classname = Closure.create_closure_file args_t clsr_t !env compiled_body_str in
+    Closure.create_closure_file args_t clsr_t !env closure_classname compiled_body_str;
     env := Frame.end_scope !env;
     [NewJvm closure_classname;
      Dup;
      Invokespecial (closure_classname ^ "/<init>()V");
-     Dup;
-     Aload 0;
-     Putfield (closure_classname^"/SL", 
-               if !env = None then
-                 "Ljava/lang/Object;"
-               else
-                 "Lframe_" ^ string_of_int (Option.get !env).id ^ ";");
-    ]
+     Dup;]
+    @
+    if !env = None then
+      [Aload 0; Putfield (closure_classname^"/SL", "Ljava/lang/Object;");]
+    else
+      [Aload !((Option.get (!env)).depth);
+       (* Getfield (closure_classname ^ "/SL", "Lframe_" ^ string_of_int (Option.get !env).id ^ ";"); *)
+       Putfield (closure_classname^"/SL", "Lframe_" ^ string_of_int (Option.get !env).id ^ ";");]
   | App(e1, args, _) -> 
     let subExprType = (getSubExprType e1) in
     let args_t = match subExprType with
