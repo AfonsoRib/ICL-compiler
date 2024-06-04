@@ -25,7 +25,8 @@ let type_to_string t=
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "Ljava/lang/String;"
-  | _ -> failwith "not supported"
+  | FunType (args,ret) -> "Lclosure_interface_" ^ String.concat "_" (List.map Ref.string_of_type args) ^ "_" ^ Ref.string_of_type ret ^ ";"
+  (* | _ -> failwith "not supported" *)
 
   let set_depth frame depth =
     frame.depth := depth
