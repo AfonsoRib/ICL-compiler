@@ -113,13 +113,8 @@ let rec findFrame (env : 'a frame_env option) id=
     | Some _ ->  ev.id
     | None -> findFrame ev.prev id
 
-let begin_scope (prev : 'a frame_env option) : ('a frame_env option) = 
-  match prev with
-  | None -> Some(create_frame prev)
-  | Some v ->
-    let types = v.types in 
-    Some (create_frame_from_types !types prev)
-
+let begin_scope (prev : 'a frame_env option) : ('a frame_env option) =  Some(create_frame prev)
+  
 let end_scope (env : 'a frame_env option) =
   match env with
   | None -> failwith "environment does not have previous environment"  

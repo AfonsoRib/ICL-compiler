@@ -209,10 +209,10 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
         Frame.bind !env id loc t;
         Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)]
       ) binds in
-    let res = comp body env in
     let frame_id = (Option.get !env).id in
     let frame_string = "frame_" ^ string_of_int frame_id in
     Frame.create_frame_file (Option.get (!env));
+    let res = comp body env in
     env := Frame.end_scope !env;
     let frameType =
       if !env = None then
