@@ -24,6 +24,7 @@ let rec str_typ = function
   | RefType t -> "Ref " ^ (str_typ t)
   | NoneType -> "None"
   | StringType -> "String"
+  (* | FunType (args, ret) -> *)
   | _ -> failwith "not implemented. implement functions"
 
 let eWithType e t n_e1 n_e2 =
@@ -132,7 +133,12 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
      let rec add_to_env (bindings : (string * exp * typ) list) (n_env : typ environment option) =
        match bindings with
        | [] -> []
-       | (id, e1, t1)::rest -> let tpck = (typechecker e1 (ref n_env)) in
+       | (id, e1, t1)::rest -> 
+        (match t1 with
+        | FunType (_, _) ->
+          Env.bind n_env id t1;
+        | _ -> ());
+        let tpck = (typechecker e1 (ref n_env)) in
                                let v = fst tpck and n_e1 = snd tpck in
                                (match t1 with
                                 | NoneType ->
@@ -143,7 +149,7 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
                                      failwith ("for id \"" ^ id ^ "\" types don't match")
                                    else
                                      (Env.bind n_env id v;
-                                      (id,e1,v)::add_to_env rest n_env))
+                                      (id,n_e1,v)::add_to_env rest n_env))
      in
      env := Env.begin_scope !env;
      let new_binds = add_to_env binds (!env) in

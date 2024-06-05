@@ -186,6 +186,12 @@ type_refs_list:
     | type_refs_list TYPE
         { $1 @ [$2] }
 
+type_refs_list_list:
+    | type_refs_list
+        { [$1] }
+    | type_refs_list_list COMMA type_refs_list
+        { $1 @ [$3] }
+
 let_bindings:
   | binding
     { [$1] }
@@ -197,4 +203,10 @@ binding:
     { (id, e, Types.NoneType) }
   | id=ID COLON type_refs_list EQ  e=exp
     { (id, e, Typechecker.typ_str (List.rev $3)) }
+  | id=ID COLON ts=type_refs_list_list ARROW ret=type_refs_list EQ e=exp
+    { (id, e, 
+    FunType(
+    List.map (fun x -> Typechecker.typ_str (List.rev x)) ts,
+     Typechecker.typ_str (List.rev ret))) }
+    
 

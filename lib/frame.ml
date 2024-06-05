@@ -21,7 +21,7 @@ let type_to_string t=
   | IntType -> "I"
   | FloatType -> "F"
   | BoolType -> "Z"
-  | UnitType -> "Ljava/lang/Object;"
+  | UnitType -> "V"
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "Ljava/lang/String;"
@@ -30,14 +30,6 @@ let type_to_string t=
 
   let set_depth frame depth =
     frame.depth := depth
-
-let create_frame_from_types t_list old_frame  =
-  let types = ref (t_list) in
-  let n_fields = ref (List.length t_list) in
-  let id = gen_number_frame () in
-  let table = Hashtbl.create 10 in
-  let depth = ref 0 in
-  {table; prev = old_frame; types; n_fields; id; depth}
 
 let create_frame_from_binds bindings old_frame =
   let rec get_types_list bindings =

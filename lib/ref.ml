@@ -9,7 +9,8 @@ let rec string_of_type t =
   | RefType r -> "ref_" ^ string_of_type r
   | NoneType -> "none"
   | StringType -> "string"
-  | FunType _ -> "function"
+  | FunType (args, ret) -> 
+    Printf.sprintf "(%s) -> %s" (String.concat ", " (List.map string_of_type args)) (string_of_type ret)
 
   let string_of_ref_subtype t =
   let aux t1 =
