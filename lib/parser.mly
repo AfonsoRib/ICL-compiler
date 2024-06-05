@@ -43,7 +43,7 @@
 %token ARROW
 %token<string> TYPE
 %token COMMA
-%type <string list> type_refs_list
+// %type <string list> type_refs_list
 
 
 /* %left ARROW */
@@ -161,52 +161,126 @@ exp:
   | e1=exp LPAR args=app_arguments_list RPAR
     { App(e1,args,Types.NoneType)}
 
-/* lpar e rpar entra em conflito app_arguments_list com só um argumento. foi resolvido com %left LPAR */
-/* (fun x : int -> x end)() não funciona porque reconhece o segundo como unit mas (fun x : int -> x end)( ) já reconhece porque tem um espaço no centro*/
-app_arguments_list:
-  | { [] }
-  | app_list {$1}
 
-app_list:
-  | exp {[$1]}
-  | app_list COMMA exp {$1 @ [$3]}
 
-arg:
-  | id=ID COLON t=type_refs_list
-    { (id, Typechecker.typ_str (List.rev t)) }
+type_string:
+  | TYPE
+    {[$1]}
+  | type_string TYPE
+    { $1 @ [$2]}
 
-arg_list:
-  | {[]}
-  | arg_list arg
-    {$1 @ [$2]}
+t:
+  | type_string
+    { Typechecker.typ_str ($1) }
+  | func
+    { $1 }
 
-type_refs_list:
-    | TYPE
-        { [$1] }
-    | type_refs_list TYPE
-        { $1 @ [$2] }
-
-type_refs_list_list:
-    | type_refs_list
-        { [$1] }
-    | type_refs_list_list COMMA type_refs_list
-        { $1 @ [$3] }
-
-let_bindings:
-  | binding
+t_star:
+  | t
     { [$1] }
-  | let_bindings binding
-    { $1 @ [$2] }
+  | t_star COMMA t
+    { $1 @ [$3] }
+
+func:
+  | LPAR t_star ARROW t RPAR
+    { Types.FunType($2, $4) }
 
 binding:
   | id=ID EQ e=exp
     { (id, e, Types.NoneType) }
-  | id=ID COLON type_refs_list EQ  e=exp
-    { (id, e, Typechecker.typ_str (List.rev $3)) }
-  | id=ID COLON ts=type_refs_list_list ARROW ret=type_refs_list EQ e=exp
-    { (id, e, 
-    FunType(
-    List.map (fun x -> Typechecker.typ_str (List.rev x)) ts,
-     Typechecker.typ_str (List.rev ret))) }
+  | id=ID COLON t EQ e=exp
+    { (id, e, $3) }
+
+let_bindings:
+  | let_bindings binding
+    { $1 @ [$2] }
+  | binding
+    { [$1] }
+
+arg:
+  | id=ID COLON t
+    { (id, $3) }
+    // { (id, Typechecker.typ_str $3) }  
+
+arg_list:
+  | arg_list arg
+    { $1 @ [$2] }
+  | arg
+    { [$1] }
+
+app_list:
+  | exp
+    { [$1] }
+  | app_list COMMA exp
+    { $1 @ [$3] }
+
+app_arguments_list:
+  | app_list
+    { $1 }
+  | { [] }
+
+
+/* (fun x : int -> x end)() não funciona porque reconhece o segundo como unit mas (fun x : int -> x end)( ) já reconhece porque tem um espaço no centro*/
+// app_arguments_list:
+//   | { [] }
+//   | app_list {$1}
+
+// app_list:
+//   | exp {[$1]}
+//   | app_list COMMA exp {$1 @ [$3]}
+
+// arg:
+//   | id=ID COLON t=type_refs_list_list
+//     { (id, t) }
+//   // | id=ID COLON t=type_refs_list ARROW ret=type_refs_list
+
+// arg_list:
+//   | {[]}
+//   | arg_list arg
+//     {$1 @ [$2]}
+
+// type_refs_list:
+//     | TYPE
+//         { [$1] }    
+//     | type_refs_list TYPE
+//         { $1 @ [$2] }
+
+// type_args:
+//   | type_args ARROW type_refs_list
+//     { [Types.FunType(
+//         $1
+//       , Typechecker.typ_str (List.rev $3))] }
+//   | type_refs_list
+//     { [(Typechecker.typ_str (List.rev $1))] }
+//   | type_args COMMA type_refs_list
+//     { $1 @ [(Typechecker.typ_str (List.rev $3))] }
+
+
+// type_refs_list_list:   
+//     | type_refs_list
+//         { (Typechecker.typ_str (List.rev $1)) }
+//     | type_args ARROW type_refs_list
+//         { Types.FunType($1,Typechecker.typ_str (List.rev $3))}
+//      | LPAR type_refs_list_list RPAR
+//         { $2 }
+
+// let_bindings:
+//   | binding
+//     { [$1] }
+//   | let_bindings binding
+//     { $1 @ [$2] }
+
+// binding:
+//   | id=ID EQ e=exp
+//     { (id, e, Types.NoneType) }
+//   | id=ID COLON type_refs_list_list EQ  e=exp
+//     { (id, e, $3) }
+  // | id=ID COLON ts=type_refs_list_list ARROW ret=type_refs_list EQ e=exp
+  //   { (id, e, FunType(ts, Typechecker.typ_str (List.rev ret))) }
+    
     
 
+// binding_type:
+//   | id=ID COLON type_refs_list EQ e=exp
+//     { (id, e, Typechecker.typ_str (List.rev $3)) }
+  

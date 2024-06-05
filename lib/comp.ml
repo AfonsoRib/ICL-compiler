@@ -301,8 +301,6 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let t1 = getSubExprType e1 in
     Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
   | Fun(args, body, t) ->
-    (* print type *)
-    print_endline (Ref.string_of_type t);
     let clsr_t = match t with
       | Types.FunType(_,t1) -> t1
       | _ -> failwith "Fun type error"
