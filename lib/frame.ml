@@ -86,21 +86,21 @@ let bind (env : 'a frame_env option) (id : string) (value : 'a) (t : Types.typ) 
 
 let rec find (env : 'a frame_env option) id =
   match env with
-  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | None -> failwith ("There is no environment or " ^ id ^ " doesn't exist") (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
     | Some v ->  v
     | None -> find ev.prev id
 
 let rec findJumpLocation (env : 'a frame_env option) id jmps=
   match env with
-  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | None -> failwith ("There is no environment or " ^ id ^ " doesn't exist") (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
     | Some v ->  (jmps, v)
     | None -> findJumpLocation ev.prev id (jmps+1)
 
 let rec findFrame (env : 'a frame_env option) id=
   match env with
-  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | None -> failwith ("There is no environment or " ^ id ^ " doesn't exist") (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
     | Some _ ->  ev.id
     | None -> findFrame ev.prev id

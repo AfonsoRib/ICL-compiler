@@ -199,19 +199,35 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     in
     c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop]
   | Let (binds, body, _ ) ->
+
     env := Frame.begin_scope !env;
     let var_counter = ref 0 in
     let vars = List.map (fun (id, e1, t) ->
+        (* backpropagate function *)
+        let back_prop = (match e1 with
+            | Fun(_,_,t) -> 
+
+              let loc = !var_counter in
+              var_counter := !var_counter + 1;
+              Frame.bind !env id loc t;
+              let frame = Option.get !env in
+              let c1 = comp e1 env in
+              Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)]
+            | _ -> []
+          ) in
+
         let frame = Option.get !env in
         let c1 = comp e1 env in
         let loc = !var_counter in
         var_counter := !var_counter + 1;
         Frame.bind !env id loc t;
-        Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)]
+        back_prop @ (Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)])
       ) binds in
     let frame_id = (Option.get !env).id in
     let frame_string = "frame_" ^ string_of_int frame_id in
+
     Frame.create_frame_file (Option.get (!env));
+
     let res = comp body env in
     env := Frame.end_scope !env;
     let frameType =
