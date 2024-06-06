@@ -185,7 +185,7 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
           add_to_env binds es n_env
         | _ -> failwith "size mismatch"
       in
-      clsr_env := Env.begin_scope !clsr_env;
+      clsr_env := Env.begin_scope !env;
       add_to_env clsr_args args !clsr_env;
       let res = eval clsr_body clsr_env in
       clsr_env := Env.end_scope !clsr_env;

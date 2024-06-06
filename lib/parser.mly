@@ -200,7 +200,6 @@ let_bindings:
 arg:
   | id=ID COLON t
     { (id, $3) }
-    // { (id, Typechecker.typ_str $3) }  
 
 arg_list:
   | arg_list arg

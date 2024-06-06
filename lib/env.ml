@@ -15,7 +15,7 @@ let bind (env : 'a environment option) (id : string) (value : 'a) =
 
 let rec find (env : 'a environment option) id =
   match env with
-  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | None -> failwith ("There is no envirionment or " ^ id ^ " doesn't exist") (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
     | Some v ->  v
     | None -> find ev.prev id
@@ -23,7 +23,7 @@ let rec find (env : 'a environment option) id =
 
 let rec findEnv (env : 'a environment option) id jmps=
   match env with
-  | None -> raise Not_found(*failwith ("There is no envirionment or " ^ id ^ " doesn't exist")*) (* talves mudar para dar return de none? *)
+  | None -> failwith ("There is no envirionment or " ^ id ^ " doesn't exist") (* talves mudar para dar return de none? *)
   | Some ev -> match Hashtbl.find_opt ev.table id with
     | Some _ ->  jmps 
     | None -> findEnv ev.prev id jmps+1
