@@ -30,16 +30,15 @@ let suite =
     "test integer evaluation">::test_eval_string "10000\n" (Ast.Int 10000);
     "test float evaluation">::test_eval_string "10000.5\n" (Ast.Float 10000.5);
     "test int addition">::test_eval_string "2+3\n" (Ast.Int 5);
-    "test float addition">::test_eval_string"1.1+8.6\n" (Ast.Float 9.7);
+    "test float addition">::test_eval_string"1.1+.8.6\n" (Ast.Float 9.7);
     "test int subtraction">::test_eval_string "2-3\n" (Ast.Int (-1));
-    "test float subtraction">::test_eval_string "1.1-8.6\n" (Ast.Float (-7.5));
-    "test int float addition">::test_eval_string "2+3.0\n" (Ast.Float 5.0);
-    "test int float subtraction">::test_eval_string "2-3.0\n" (Ast.Float (-1.0));
+    "test float subtraction">::test_eval_string "1.1-.8.6\n" (Ast.Float (-7.5));
     "test negation">::test_eval_string "-3\n" (Ast.Int (-3));
     "test sequence">::test_eval_string "1;2\n" (Ast.Int 2);
     "test multiplication">::test_eval_string "45*9\n" (Ast.Int 405);
+    "test multiplication">::test_eval_string "45.0*.9.0\n" (Ast.Float 405.0);
     "test int division">::test_eval_string "49/7\n" (Ast.Int 7);
-    "test float division">::test_eval_string "49.0/7.0\n" (Ast.Float 7.0);
+    "test float division">::test_eval_string "49.0/.7.0\n" (Ast.Float 7.0);
     "test equality true">::test_eval_string "20 = 20\n" (Ast.Bool true);
     "test equality false">::test_eval_string "20 = 1\n" (Ast.Bool false);
     "test inequality true">::test_eval_string "40 != 20\n" (Ast.Bool true);
@@ -101,6 +100,7 @@ let suite =
     "test println">::test_eval_string "println 10\n" Ast.Unit;
     "test while loop with prints">::test_eval_string "let x = new 10 in (while !x > 0 do ((println !x) ; x := (!x - 1)) end)\n" Ast.Unit;
     "test sequence">::test_eval_string "let x = new 3 in ((x := (!x - 1)) ; !x)\n" (Ast.Int 2);
+    
   ]
 
 let () =
