@@ -19,7 +19,9 @@ let main =
       | Ref _ -> printf "- : %s\n" (Ast.string_of_ref res "" "" ""); flush stdout
       | Unit -> print_endline "- : unit = ()"; flush stdout
       | Str s -> printf "- : string = %s\n" s; flush stdout
-      | Closure _ -> printf "- : closure = todo\n" ; flush stdout
+      (* todo em vez de usar Ref.string_of_type. fazer uma nova função *)
+      | Closure (args, body, _) -> print_endline ("- : closure = " ^ String.concat " " (List.map (fun x -> Ref.string_of_type (snd x)) args) ^ " -> " ^ Ref.string_of_type (Comp.getSubExprType body) ^ "\n"); flush stdout 
+        
     with | Failure msg -> print_endline msg
          |_-> print_endline "Syntax error!"
   done

@@ -21,7 +21,7 @@ let type_to_string t=
   | IntType -> "I"
   | FloatType -> "F"
   | BoolType -> "Z"
-  | UnitType -> "V"
+  | UnitType -> "Ljava/lang/String;"
   | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
   | NoneType -> "none"
   | StringType -> "Ljava/lang/String;"

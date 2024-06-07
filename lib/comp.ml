@@ -144,7 +144,6 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let loc_i = snd temp in
     let frame_i = Frame.findFrame !env id in (*esta funções pode ser posta dentro de outra. é só overhead*)
     let rec aux jmps (n_env : int Frame.frame_env) =
-      (* TODO Option.get tem pode dar problemas*)
       if jmps = 0 then
         []
       else
@@ -292,14 +291,14 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
       (match t with
        | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
        | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(F)Ljava/lang/String;"
-       | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
+       | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;" 
        | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
-       | _ -> failwith ("Cannot print value with type" ^ Ref.string_of_type t))
+       | _ -> failwith ("Cannot print value with type " ^ Ref.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
       :: [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
     in
     let c1 = comp e1 env in
     let t1 = getSubExprType e1 in
-    Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
+    Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1 @ [Ldc "\"()\""]
   | Fun(args, body, t) ->
     let clsr_t = match t with
       | Types.FunType(_,t1) -> t1
@@ -346,6 +345,6 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     c1 @ c2 @ 
     [Invokeinterface (interface_name ^ "/apply(" ^ (String.concat "" (List.map Frame.type_to_string args_t)) ^ ")" ^ Frame.type_to_string ret_type,(List.length args) +1 )]
   | String(s, _) -> [Ldc s]
-  | UnitExp _ -> []          (* criar uma classe para units *)
+  | UnitExp _ -> [ Ldc "\"()\""]          (* criar uma classe para units *)
 
 (* | _ -> [Nop] *)

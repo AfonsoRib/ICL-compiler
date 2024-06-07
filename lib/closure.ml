@@ -47,10 +47,20 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) cl
     ".end method"
   ] in
   let comp_fields_intermediate = (List.mapi 
-                                    (fun i fields -> [ "dup";
-                                                       "iload " ^ (string_of_int (i+1)); (*TODO mudar load em função do tipo*)
-                                                       "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/loc_" ^ (string_of_int i) ^ " " ^ fields
-                                                     ]) fields ) in
+                                    (fun i field -> [ "dup";
+                                                       (match field with
+                                                        | Types.IntType -> "iload "
+                                                        | Types.FloatType -> "fload "
+                                                        | Types.BoolType -> "iload "
+                                                        | Types.StringType -> "aload "
+                                                        | Types.RefType _ -> "aload "
+                                                        | Types.FunType _ -> "aload "
+                                                        | Types.UnitType -> "aload "
+                                                        | Types.NoneType -> failwith "Cannot have NoneType"
+                                                       )
+                                                        ^ (string_of_int (i+1));
+                                                       "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/loc_" ^ (string_of_int i) ^ " " ^ (Frame.type_to_string field);
+                                                     ]) args ) in
   let comp_fields  = List.flatten comp_fields_intermediate
   in
   let apply = [
@@ -61,12 +71,13 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) cl
     "dup";
     "invokespecial frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/<init>()V";
     "dup";
-    "aload 0";
-    (* todo isto está mal. tem que pôr no frame anterior caso existe. caso não apenas fazer put field *)
-    if prev_frame <> None then
-    "getfield " ^ class_name ^ "/SL " ^ prev_frame_str
+    "aload 0";]
+    @
+    (if prev_frame <> None then
+      ["getfield " ^ class_name ^ "/SL " ^ prev_frame_str]
     else
-      "";
+      [])
+    @[
     "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/SL " ^ prev_frame_str;
 
   ] @ 
@@ -75,7 +86,7 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) cl
     @ compiled_body 
     @ [
       (match clsrt_t with
-       | Types.UnitType -> "return"
+       | Types.UnitType -> "areturn"
        | Types.IntType -> "ireturn"
        | Types.FloatType -> "freturn"
        | Types.BoolType -> "ireturn"
