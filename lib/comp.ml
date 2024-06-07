@@ -153,7 +153,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let intermidiate = aux jmps (Option.get (!env)) in
     Aload !((Option.get (!env)).depth) (* este aload deve variar dependendo da closure onde é aplicado*)
     ::  intermidiate @
-    [Getfield ("frame_" ^ string_of_int (frame_i) ^ "/loc_" ^ string_of_int loc_i, Frame.type_to_string t);]
+    [Getfield ("frame_" ^ string_of_int (frame_i) ^ "/loc_" ^ string_of_int loc_i, Types.jvmTypeString_of_type t);]
 
   | Add (e1, e2, _) -> comp e1 env @ comp e2 env @ [Iadd]
   | Mult (e1, e2, _) -> comp e1 env @ comp e2 env @ [Imul]
@@ -211,7 +211,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
               Frame.bind !env id loc t;
               let frame = Option.get !env in
               let c1 = comp e1 env in
-              Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)]
+              Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Types.jvmTypeString_of_type t)]
             | _ -> []
           ) in
 
@@ -220,7 +220,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
         let loc = !var_counter in
         var_counter := !var_counter + 1;
         Frame.bind !env id loc t;
-        back_prop @ (Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Frame.type_to_string t)])
+        back_prop @ (Aload 0 :: c1 @ [Putfield ("frame_" ^ string_of_int frame.id ^ "/loc_" ^ string_of_int loc, Types.jvmTypeString_of_type t)])
       ) binds in
     let frame_id = (Option.get !env).id in
     let frame_string = "frame_" ^ string_of_int frame_id in
@@ -252,17 +252,17 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
      Dup;
      Invokespecial (typeName ^ "/<init>()V");
      Dup;
-    ] @ c1 @ [Putfield (typeName^"/value", Ref.string_of_ref_subtype t)]
+    ] @ c1 @ [Putfield (typeName^"/value", Types.string_of_ref_subtype t)]
   | Deref(e1,t) ->
     let c1 = comp e1 env in
-    let loc = (Ref.string_of_type (RefType(t))) ^ "/value"
+    let loc = (Types.string_of_type (RefType(t))) ^ "/value"
     in 
-    c1 @ [Getfield (loc, Frame.type_to_string (t))]
+    c1 @ [Getfield (loc, Types.jvmTypeString_of_type (t))]
   | Assign(e1,e2,_) ->
     let c1 = comp e1 env in
     let c2 = comp e2 env in
-    let loc = Ref.string_of_type (getSubExprType e1) ^ "/value"
-    and t1 = Ref.string_of_ref_subtype (getSubExprType e1) in
+    let loc = Types.string_of_type (getSubExprType e1) ^ "/value"
+    and t1 = Types.string_of_ref_subtype (getSubExprType e1) in
     c1 @ c2 @ [Putfield (loc, t1)]
   | While(e1,e2,_) ->
     let c1 = comp e1 env and
@@ -274,25 +274,27 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
   | Print(e1,_) ->
     let printType t =
       (match t with
-       | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
-       | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(F)Ljava/lang/String;"
-       | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"
-       | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
-       | _ -> Nop)
-      :: [Invokevirtual "java/io/PrintStream/print(Ljava/lang/String;)V"]
+       | Types.BoolType | Types.IntType | Types.FloatType  -> [Invokestatic ("java/lang/String/valueOf(" ^ Types.jvmTypeString_of_type t ^ ")Ljava/lang/String;")]
+       | Types.UnitType | Types.StringType -> [Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"]
+       (* | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
+       Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
+       | FunType (args, ret) -> *)
+       | _ -> failwith ("Cannot print value with type " ^ Types.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
+      @ [Invokevirtual "java/io/PrintStream/print(Ljava/lang/String;)V"]
     in
     let c1 = comp e1 env in
     let t1 = getSubExprType e1 in
-    Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1
+    Getstatic ("java/lang/System/out", "Ljava/io/PrintStream;") :: c1 @ printType t1 @ [Ldc "\"()\""]
   | PrintLn(e1,_) ->
     let printType t =
       (match t with
-       | Types.IntType -> Invokestatic "java/lang/String/valueOf(I)Ljava/lang/String;"
-       | Types.FloatType -> Invokestatic  "java/lang/String/valueOf(F)Ljava/lang/String;"
-       | Types.UnitType | Types.StringType -> Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;" 
-       | Types.BoolType -> Invokestatic "java/lang/String/valueOf(Z)Ljava/lang/String;"
-       | _ -> failwith ("Cannot print value with type " ^ Ref.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
-      :: [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
+       | Types.BoolType | Types.IntType | Types.FloatType  -> [Invokestatic ("java/lang/String/valueOf(" ^ Types.jvmTypeString_of_type t ^ ")Ljava/lang/String;")]
+       | Types.UnitType | Types.StringType -> [Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"]
+       (* | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
+       Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
+       | FunType (args, ret) -> *)
+       | _ -> failwith ("Cannot print value with type " ^ Types.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
+      @ [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
     in
     let c1 = comp e1 env in
     let t1 = getSubExprType e1 in
@@ -336,12 +338,12 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
       | _ -> failwith "Not Fun_type in App ret"
     in 
     let interface_name = "closure_interface_" ^
-                         String.concat "_" (List.map Ref.string_of_type  args_t)
-                         ^ "_" ^ Ref.string_of_type ret_type in
+                         String.concat "_" (List.map Types.string_of_type  args_t)
+                         ^ "_" ^ Types.string_of_type ret_type in
     let c1 = comp e1 env in
     let c2 = List.flatten (List.map (fun x -> comp x env) args) in
     c1 @ c2 @ 
-    [Invokeinterface (interface_name ^ "/apply(" ^ (String.concat "" (List.map Frame.type_to_string args_t)) ^ ")" ^ Frame.type_to_string ret_type,(List.length args) +1 )]
+    [Invokeinterface (interface_name ^ "/apply(" ^ (String.concat "" (List.map Types.jvmTypeString_of_type args_t)) ^ ")" ^ Types.jvmTypeString_of_type ret_type,(List.length args) +1 )]
   | String(s, _) -> [Ldc s]
   | UnitExp _ -> [ Ldc "\"()\""]          (* criar uma classe para units *)
 

@@ -37,7 +37,6 @@ let main =
     let typ = fst typecheck in
     let ast2 = snd typecheck in
     if typ = Types.NoneType then failwith "Failed typechecker pass. Expression type: None";
-    (* print_endline "ref" (Ref.string_of_type typ); *)
     let res = Comp.comp ast2 (ref None)in
     output_string outchannel preamble;
     List.iter (fun x -> output_string outchannel ((Comp.jvmString x) ^ "\n")) res;

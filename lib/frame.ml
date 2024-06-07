@@ -16,20 +16,20 @@ let gen_number_frame () =
   counter_frames := fresh_number + 1;
   fresh_number
 
-let type_to_string t=
+(* let type_to_string t=
   match t with
   | IntType -> "I"
   | FloatType -> "F"
   | BoolType -> "Z"
-  | UnitType -> "Ljava/lang/String;"
-  | RefType _ -> "L"^ Ref.string_of_type t ^ ";"
+  | RefType _ -> "L"^ string_of_type t ^ ";"
   | NoneType -> "none"
-  | StringType -> "Ljava/lang/String;"
-  | FunType (args,ret) -> "Lclosure_interface_" ^ String.concat "_" (List.map Ref.string_of_type args) ^ "_" ^ Ref.string_of_type ret ^ ";"
-  (* | _ -> failwith "not supported" *)
+  | UnitType | StringType -> "Ljava/lang/String;"
+  | FunType (args,ret) -> "Lclosure_interface_" ^ String.concat "_" (List.map Types.string_of_type args) ^ "_" ^ Types.string_of_type ret ^ ";" *)
+(* | _ -> failwith "not supported" *)
 
-  let set_depth frame depth =
-    frame.depth := depth
+
+let set_depth frame depth =
+  frame.depth := depth
 
 let create_frame_from_binds bindings old_frame =
   let rec get_types_list bindings =
@@ -69,7 +69,7 @@ let create_frame_file frame =
     "return";
     ".end method"
   ] in
-  let types = ref(List.map type_to_string !(frame.types)) in
+  let types = ref(List.map jvmTypeString_of_type !(frame.types)) in
   let fields = List.mapi (fun i t -> ".field public loc_" ^ string_of_int i ^ " " ^ t) !types in
   let f = preamble @ fields @ constructor in
   let oc = open_out ("frame_"^ string_of_int frame.id ^".j") in
@@ -80,9 +80,9 @@ let bind (env : 'a frame_env option) (id : string) (value : 'a) (t : Types.typ) 
   match env with
   | None -> failwith "cannot bind value to null hashtable"
   | Some v -> Hashtbl.add v.table id value; 
-              v.n_fields := !(v.n_fields) + 1;
-              v.types := !(v.types) @ [t]
-              
+    v.n_fields := !(v.n_fields) + 1;
+    v.types := !(v.types) @ [t]
+
 
 let rec find (env : 'a frame_env option) id =
   match env with
@@ -106,7 +106,7 @@ let rec findFrame (env : 'a frame_env option) id=
     | None -> findFrame ev.prev id
 
 let begin_scope (prev : 'a frame_env option) : ('a frame_env option) =  Some(create_frame prev)
-  
+
 let end_scope (env : 'a frame_env option) =
   match env with
   | None -> failwith "environment does not have previous environment"  

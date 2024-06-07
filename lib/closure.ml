@@ -6,11 +6,11 @@ let gen_number_closure () =
   n
 
 let create_interface args ret name =
-  let fields = List.map (fun t -> Frame.type_to_string t) args in
+  let fields = List.map (fun t -> Types.jvmTypeString_of_type t) args in
   let file = [
     ".interface public " ^ name;
     ".super java/lang/Object";
-    ".method public abstract apply(" ^ (String.concat "" fields) ^ ")" ^ (Frame.type_to_string ret);
+    ".method public abstract apply(" ^ (String.concat "" fields) ^ ")" ^ (Types.jvmTypeString_of_type ret);
     ".end method"
   ] in
   let file_str = String.concat "\n" file in
@@ -22,15 +22,15 @@ let create_interface args ret name =
 
 let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) class_name compiled_body=
   let interface_name = "closure_interface_" ^
-                       String.concat "_" (List.map Ref.string_of_type args)
-                       ^ "_" ^ Ref.string_of_type clsrt_t in
+                       String.concat "_" (List.map Types.string_of_type args)
+                       ^ "_" ^ Types.string_of_type clsrt_t in
   create_interface args clsrt_t interface_name;
   let prev_frame = (Option.get cur_frame).prev in
   let prev_frame_str = match prev_frame with
     | None -> "Ljava/lang/Object;"
     | Some f -> "Lframe_" ^ string_of_int f.id ^ ";" in
   (* let cur_frame_str = "Lframe_" ^ string_of_int (Option.get cur_frame).id ^ ";" in *)
-  let fields = List.map (fun t -> Frame.type_to_string t) args in
+  let fields = List.map (fun t -> Types.jvmTypeString_of_type t) args in
   let preamble= [
     ".class public " ^ class_name;
     ".super java/lang/Object";
@@ -59,12 +59,12 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) cl
                                                         | Types.NoneType -> failwith "Cannot have NoneType"
                                                        )
                                                         ^ (string_of_int (i+1));
-                                                       "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/loc_" ^ (string_of_int i) ^ " " ^ (Frame.type_to_string field);
+                                                       "putfield frame_" ^ (string_of_int (Option.get cur_frame).id) ^ "/loc_" ^ (string_of_int i) ^ " " ^ (Types.jvmTypeString_of_type field);
                                                      ]) args ) in
   let comp_fields  = List.flatten comp_fields_intermediate
   in
   let apply = [
-    ".method public apply(" ^ (String.concat "" fields) ^ ")" ^ (Frame.type_to_string clsrt_t);
+    ".method public apply(" ^ (String.concat "" fields) ^ ")" ^ (Types.jvmTypeString_of_type clsrt_t);
     ".limit locals " ^ (string_of_int ((List.length args) + 3));
     ".limit stack 256";
     "new frame_" ^ (string_of_int (Option.get cur_frame).id);
