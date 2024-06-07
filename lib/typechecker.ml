@@ -17,17 +17,17 @@ let rec typ_str typ_list =
       | _ -> failwith "no such type")
 
 (* let rec str_typ_functions typ_list = 
-  match typ_list with
-  | [] -> failwith "no such type"
-  | [t] -> typ_str t
-  | t::ts1 -> (match t with
+   match typ_list with
+   | [] -> failwith "no such type"
+   | [t] -> typ_str t
+   | t::ts1 -> (match t with
       | t::ts2 -> (match t with
           | "fun" ->
               match ts with
               | t::ts -> FunType(List.map (fun x -> typ_str x) ts, typ_str t)
               | _ -> failwith "no such type")
       | _ -> typ_str t)
- *)
+*)
 
 
 let rec str_typ = function
@@ -287,16 +287,17 @@ let rec typechecker (e : Ast.exp) (env : typ environment option ref): (typ * Ast
       | _ -> NoneType (* failwith "function was given more or is missing more arguments than supposed" *)
     in
     let typecheckedArgs = typecheckArgs args in
-    match f_type with
-    | FunType(f_args, e_type) ->
-      (* List.iter (fun x -> print_endline ("farg " ^ Ref.string_of_type x)) f_args; *)
-      (* List.iter (fun x -> print_endline ("app-args " ^ Ref.string_of_type x)) verify_args; *)
-      (* print_endline ("fun_type " ^ (Ref.string_of_type e_type)); *)
-      (* print_endline ("app_type " ^(Ref.string_of_type f_type)); *)
-      let retArgs =  List.map snd typecheckedArgs in
-      if (verify_args f_args typecheckedArgs e_type) = e_type then
-        (e_type, App((snd tpck),retArgs, e_type))
-      else
-        (NoneType, App(e1,args, NoneType))
-    | _ -> (NoneType, App(e1,args, NoneType))
+    (match f_type with
+     | FunType(f_args, e_type) ->
+       (* List.iter (fun x -> print_endline ("farg " ^ Ref.string_of_type x)) f_args; *)
+       (* List.iter (fun x -> print_endline ("app-args " ^ Ref.string_of_type x)) verify_args; *)
+       (* print_endline ("fun_type " ^ (Ref.string_of_type e_type)); *)
+       (* print_endline ("app_type " ^(Ref.string_of_type f_type)); *)
+       let retArgs =  List.map snd typecheckedArgs in
+       if (verify_args f_args typecheckedArgs e_type) = e_type then
+         (e_type, App((snd tpck),retArgs, e_type))
+       else
+         (NoneType, App(e1,args, NoneType))
+     | _ -> (NoneType, App(e1,args, NoneType)))
+
 

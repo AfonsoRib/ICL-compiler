@@ -244,9 +244,7 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     ] @ List.flatten vars @ res @ [Aload 0; Getfield (frame_string^"/SL", frameType); Astore 0]  
   | Seq(e1,e2,_) -> let c1 = comp e1 env
     and c2 = comp e2 env in
-    let t1 = getSubExprType e1 in
-    let aux = if t1 = UnitType then [] else [Pop] in
-    c1 @ aux @ c2
+    c1 @ [Pop] @ c2
   | New(e1,t) ->
     let c1 = comp e1 env in
     let typeName = Ref.gen_ref t in
