@@ -30,17 +30,6 @@ let rec typ_str typ_list =
 *)
 
 
-let rec str_typ = function
-  | IntType -> "Int"
-  | FloatType -> "Float"
-  | BoolType -> "Bool"
-  | UnitType -> "unit"
-  | RefType t -> "Ref " ^ (str_typ t)
-  | NoneType -> "None"
-  | StringType -> "String"
-  (* | FunType (args, ret) -> *)
-  | _ -> failwith "not implemented. implement functions"
-
 let eWithType e t n_e1 n_e2 =
   match e with
   |Add (_) ->  Add(n_e1, n_e2, t)

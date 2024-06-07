@@ -52,6 +52,7 @@ let string_of_ref_subtype t =
     | FloatType -> "F"
     | BoolType -> "Z"
     | StringType -> "Ljava/lang/String;"
+    | UnitType -> "Ljava/lang/String;"
     | _ -> "none"
   in
   match t with
