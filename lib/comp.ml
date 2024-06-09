@@ -290,9 +290,9 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
       (match t with
        | Types.BoolType | Types.IntType | Types.FloatType  -> [Invokestatic ("java/lang/String/valueOf(" ^ Types.jvmTypeString_of_type t ^ ")Ljava/lang/String;")]
        | Types.UnitType | Types.StringType -> [Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"]
-       (* | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
+       | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
        Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
-       | FunType (args, ret) -> *)
+       (* | FunType (args, ret) ->  *)
        | _ -> failwith ("Cannot print value with type " ^ Types.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
       @ [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
     in
