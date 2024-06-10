@@ -72,3 +72,26 @@ let f : ((int -> int) -> int)  = (fun x : (int->int) -> (x(2)) end) in 1
 (fun x:((int,int -> int) -> int  ) -> 2 end)
 let x : (unit->unit) = (fun x:unit -> println(x) end) in x(())
 println(println((fun x: (int,int -> int  ) -> 2 end)((fun x:int y:int -> (x+y) end))))
+let x = 5 in let x = 10 in x
+let x = 5 in let x = x + 1 in x
+let f = (fun x:int -> x + 1 end) in let g = (fun y:int -> y * 2 end) in g(f(3))
+let f = (fun x:int -> x + 1 end) in let g = (fun y:int -> y * 2 end) in let h = (fun z:int -> z - 1 end) in h(g(f(3)))
+let apply = (fun f:(int -> int) x:int -> f(x) end) in let increment = (fun y:int -> y + 1 end) in apply(increment, 5)
+let apply_twice = (fun f:(int -> int) x:int -> f(f(x)) end) in let double = (fun y:int -> y * 2 end) in apply_twice(double, 3)
+let rec fact = (fun n:int -> if n = 0 then 1 else n * fact(n - 1) end) in fact(5)
+let rec fib = (fun n:int -> if n <= 1 then n else fib(n - 1) + fib(n - 2) end) in fib(10)
+if true then if false then 1 else 2 end else 3 end
+if false then if true then 1 else 2 end else 3 end
+let x = 1 in let y = 2 in let z = x + y in z
+let x = 1 in let f = (fun y:int -> x + y end) in f(10)
+let x = new 1 in !x := "wrong type"
+let x = 1 / 0 in x
+let f = (fun x:int -> x + 1 end) in f("string")
+let x = true && (false || true) in x
+let x = false || (true && false) in x
+let x = new 0 in while !x < 10 do x := !x + 1 end
+let x = new 0 in while !x < 10 do (println(!x); x := !x + 1) end
+let x = 1 + 2 * 3 - 4 / 2 in x
+let x = 1.5 + 2.5 * 3.5 - 4.5 / 2.5 in x
+let x = new (new 1) in !(x)
+let x = new (new true) in !(!x)
