@@ -18,31 +18,34 @@ runC:
 		echo "Compilation failed, stopping."; \
 		exit 1; \
 	fi
-	@if [ ! -s jasmin.j ]; then \
+	@cd jasmin_bytecode; \
+	if [ ! -s jasmin.j ]; then \
 		echo "Jasmin file is empty, likely due to previous errors. Stopping."; \
 		exit 1; \
 	else \
-		if ! java -jar jasmin.jar *.j; then \
+		if ! java -jar ../jasmin.jar *.j; then \
 			echo "Jasmin error, stopping."; \
 			exit 1; \
 		fi; \
-	fi
-	@echo "\n Output "
-	@java Demo
+	fi;	\
+	echo "\n Output "; \
+	java Demo;
 
 test:
 	@echo "\n== Running tests... =="
 	@dune runtest
 
 runJ:
-	@if [ ! -s jasmin.j ]; then \
+	@cd jasmin_bytecode; \
+	if [ ! -s jasmin.j ]; then \
 		echo "Jasmin file is empty, likely due to previous errors. Stopping."; \
 		exit 1; \
 	else \
-		if ! java -jar jasmin.jar *.j; then \
+		if ! java -jar ../jasmin.jar *.j; then \
 			echo "Jasmin error, stopping."; \
 			exit 1; \
 		fi; \
 	fi
 	@echo "\n Output "
-	@java Demo
+	@cd jasmin_bytecode; \
+	java Demo

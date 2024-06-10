@@ -185,20 +185,19 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
   | Or(e1, e2, _) -> comp e1 env @ comp e2 env @ [Ior]
   | Not(e, _) -> comp e env @ [Sipush 1; Ixor]
   | IfThenElse(e1,e2,e3,_) -> let c1 = comp e1 env and
-    c2 = comp e2 env and
-    c3 = comp e3 env and
+    c2 = comp e2 env @ if getSubExprType e2 = Types.UnitType then [Pop] else [] and
+    c3 = comp e3 env @ if getSubExprType e3 = Types.UnitType then [Pop] else [] and
     l1 = gen_label () and
     l2 = gen_label ()
     in
     c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop] @ c3 @ [Label l2; Nop]
   | IfThen(e1,e2,_) -> let c1 = comp e1 env and
-    c2 = comp e2 env and
+    c2 = comp e2 env @ if getSubExprType e2 = Types.UnitType then [Pop] else [] and
     l1 = gen_label () and
     l2 = gen_label ()
     in
-    c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Nop; Label l2; Nop]
+    c1 @ [Sipush 1; If_icmpne l1] @ c2 @ [Goto l2; Label l1; Nop; Label l2; Nop]
   | Let (binds, body, _ ) ->
-
     env := Frame.begin_scope !env;
     let var_counter = ref 0 in
     let vars = List.map (fun (id, e1, t) ->
@@ -263,22 +262,22 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
     let c2 = comp e2 env in
     let loc = Types.string_of_type (getSubExprType e1) ^ "/value"
     and t1 = Types.string_of_ref_subtype (getSubExprType e1) in
-    c1 @ c2 @ [Putfield (loc, t1)]
+    c1 @ c2 @ [Putfield (loc, t1); Ldc "\"()\""]
   | While(e1,e2,_) ->
     let c1 = comp e1 env and
     c2 = comp e2 env and
     l1 = gen_label () and
     l2 = gen_label ()
     in
-    [Label l1] @ c1 @ [Sipush 1; If_icmpne l2;] @ c2 @ [Goto l1; Label l2; Nop]
+    let t_c2 = getSubExprType e2 in
+    [Label l1] @ c1 @ [Sipush 1; If_icmpne l2;] @ c2 @ (if t_c2 = Types.UnitType then [Pop] else []) @ [Goto l1; Label l2; Nop]
   | Print(e1,_) ->
     let printType t =
       (match t with
        | Types.BoolType | Types.IntType | Types.FloatType  -> [Invokestatic ("java/lang/String/valueOf(" ^ Types.jvmTypeString_of_type t ^ ")Ljava/lang/String;")]
        | Types.UnitType | Types.StringType -> [Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"]
-       | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
-       Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
-       (* | FunType (args, ret) ->  *)
+       | FunType _ | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
+                                          Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
        | _ -> failwith ("Cannot print value with type " ^ Types.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
       @ [Invokevirtual "java/io/PrintStream/print(Ljava/lang/String;)V"]
     in
@@ -290,9 +289,9 @@ let rec comp (expression : exp) (env : int Frame.frame_env option ref) : jvm lis
       (match t with
        | Types.BoolType | Types.IntType | Types.FloatType  -> [Invokestatic ("java/lang/String/valueOf(" ^ Types.jvmTypeString_of_type t ^ ")Ljava/lang/String;")]
        | Types.UnitType | Types.StringType -> [Invokestatic "java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;"]
-       | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
-       Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
-       (* | FunType (args, ret) ->  *)
+       | FunType _ | Types.RefType(_) -> [Invokevirtual "java/lang/Object/toString()Ljava/lang/String;";
+                                          Invokestatic ("java/lang/String/valueOf(Ljava/lang/Object;)Ljava/lang/String;")]
+
        | _ -> failwith ("Cannot print value with type " ^ Types.string_of_type t)) (* TODO implementar função na classe do ref para dar print do valor *)
       @ [Invokevirtual "java/io/PrintStream/println(Ljava/lang/String;)V"]
     in

@@ -26,12 +26,30 @@ let preamble =
 (*     (pos.pos_cnum - pos.pos_bol + 1) *)
 
 let main =
-  let filename = "test.txt" in (* Specify your input file name here *)
-  let channel = open_in filename in
+  (* let filename = "test.txt" in (\* Specify your input file name here *\) *)
+  (* let channel = open_in filename in *)
+  let dir_name = "jasmin_bytecode" in
+  let permissions = 0o755 in
+  (try
+     Unix.mkdir dir_name permissions;
+     Printf.printf "Directory '%s' created successfully.\n" dir_name;
+     Unix.chdir dir_name;
+     Printf.printf "Changed directory to '%s'.\n" dir_name
+   with
+   | Unix.Unix_error (EEXIST, _, _) ->
+      Printf.printf "Directory '%s' already exists.\n" dir_name;
+      (try
+         Unix.chdir dir_name;
+        Printf.printf "Changed directory to '%s'.\n" dir_name
+       with
+       | _ -> failwith "something went wrong creating and cding into the bytecode directory")
+   | Unix.Unix_error (e, _, _) ->
+      Printf.printf "Failed to create directory '%s': %s\n" dir_name (Unix.error_message e)
+   | _ -> failwith "something went wrong creating and cding into the bytecode directory");
   let outputname = "jasmin.j" in
   let outchannel = open_out outputname in
   try
-    let lexbuf = Lexing.from_channel channel in
+    let lexbuf = Lexing.from_channel stdin in
     let ast = Parser.start Lexer.token lexbuf in
     let typecheck = (Typechecker.typechecker ast (ref None)) in
     let typ = fst typecheck in

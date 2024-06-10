@@ -71,10 +71,10 @@ let suite =
     "test type annotation boolean true">::test_eval_string "let x : bool = true in x\n" (Ast.Bool true);
     "test type annotation boolean false">::test_eval_string "let x : bool = false in x\n" (Ast.Bool false);
     "test type annotation unit">::test_eval_string "let x : unit = () in x\n" Ast.Unit;
-    "test type annotation ref integer">::test_eval_string "let x : int ref = new 1 in x\n" (Ast.Ref (ref (Ast.Int 1)));
-    "test type annotation ref float">::test_eval_string "let x : float ref = new 1.0 in x\n" (Ast.Ref (ref (Ast.Float 1.0)));
-    "test type annotation ref boolean true">::test_eval_string "let x : bool ref = new true in x\n" (Ast.Ref (ref (Ast.Bool true)));
-    "test type annotation ref boolean false">::test_eval_string "let x : bool ref = new false in x\n" (Ast.Ref (ref (Ast.Bool false)));
+    "test type annotation ref integer">::test_eval_string "let x : ref int = new 1 in x\n" (Ast.Ref (ref (Ast.Int 1)));
+    "test type annotation ref float">::test_eval_string "let x : ref float = new 1.0 in x\n" (Ast.Ref (ref (Ast.Float 1.0)));
+    "test type annotation ref boolean true">::test_eval_string "let x : ref bool = new true in x\n" (Ast.Ref (ref (Ast.Bool true)));
+    "test type annotation ref boolean false">::test_eval_string "let x : ref bool = new false in x\n" (Ast.Ref (ref (Ast.Bool false)));
     "test type missmatch ref unit">::test_expected_failure "let x : unit ref = () in x\n";
     "test type mismatch bool to int">::test_expected_failure "let x : bool = 1 in x\n";
     "test type mismatch int to bool">::test_expected_failure "let x : int = true in x\n";
@@ -100,7 +100,10 @@ let suite =
     "test println">::test_eval_string "println 10\n" Ast.Unit;
     "test while loop with prints">::test_eval_string "let x = new 10 in (while !x > 0 do ((println !x) ; x := (!x - 1)) end)\n" Ast.Unit;
     "test sequence">::test_eval_string "let x = new 3 in ((x := (!x - 1)) ; !x)\n" (Ast.Int 2);
-    
+    "test recursive function">::test_eval_string"let f : (int, int -> int) = (fun x:int y:int -> (if (x>0) then (f(x-1,y)) else y end) end) in println (f(2,10))\n" Ast.Unit;
+    "test passing functions as arguments">::test_eval_string"let f : ((int -> int) -> int)  = (fun x : (int->int) -> (x(2)) end) in 1\n" (Ast.Int 1);
+    "test function to print unit">::test_eval_string"let x : (unit->unit) = (fun x:unit -> println(x) end) in x(())\n" Ast.Unit;
+    "test passing two arguments">::test_eval_string"println(println((fun x: (int,int -> int  ) -> 2 end)((fun x:int y:int -> (x+y) end))))\n" Ast.Unit;
   ]
 
 let () =

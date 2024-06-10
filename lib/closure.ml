@@ -97,7 +97,15 @@ let create_closure_file args clsrt_t (cur_frame : int Frame.frame_env option) cl
       ".end method"
     ]
   in
-  let file = List.flatten [preamble; constructor; apply] in
+  let toString = [
+    ".method public toString()Ljava/lang/String;";
+    ".limit locals 1";
+    ".limit stack 1";
+    Printf.sprintf "ldc \"fun %s -> %s\"" (String.concat " " (List.map Types.string_of_type args)) (Types.string_of_type clsrt_t);
+    "areturn";
+    ".end method"
+  ] in
+  let file = List.flatten [preamble; constructor; apply; toString] in
   let file_str = String.concat "\n" file in
   let file_name = Printf.sprintf "%s.j" class_name in
   let oc = open_out file_name in

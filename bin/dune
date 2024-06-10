@@ -8,5 +8,5 @@
  (public_name icl2)
  (modules main_comp)
  (name main_comp)
- (libraries icl))
+ (libraries icl unix))
 
