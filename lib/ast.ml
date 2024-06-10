@@ -114,7 +114,11 @@ let rec eval (expr : exp) (env : eval_result environment option ref) : eval_resu
   | Add (e1, e2, _) ->  (int_operation (+) (eval e1 env) (eval e2 env))
   | Mult (e1, e2, _) -> (int_operation ( * ) (eval e1 env) (eval e2 env))
   | Sub (e1, e2, _) -> (int_operation (-) (eval e1 env) (eval e2 env))
-  | Div (e1, e2, _) -> (int_operation (/) (eval e1 env) (eval e2 env))
+  | Div (e1, e2, _) -> let e1_val = eval e1 env in
+    let e2_val = eval e2 env in
+    (match e2_val with
+     | Int 0 -> failwith "Error: Division by zero"
+     | _ -> int_operation (/) e1_val e2_val)
   | Addf (e1, e2, _) ->  (float_operation (+.) (eval e1 env) (eval e2 env))
   | Multf (e1, e2, _) -> (float_operation ( *. ) (eval e1 env) (eval e2 env))
   | Subf (e1, e2, _) -> (float_operation (-.) (eval e1 env) (eval e2 env))

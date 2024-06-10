@@ -92,24 +92,29 @@ exp:
       then FloatFact(float_of_string n, Types.NoneType)
       else Fact(int_of_string n, Types.NoneType)
     }
+  | UNIT
+    { UnitExp(Types.NoneType) }
+  | s=STRING
+    { String(s, Types.NoneType) }
   | id=ID
     { Id(id, Types.NoneType) }
   | e1=exp SEMICOLON e2=exp
     { Seq(e1,e2,Types.NoneType) }
   | e1=exp PLUS e2=exp
     { Add(e1, e2, Types.NoneType) }
-  | e1=exp MULT e2=exp
-    { Mult(e1, e2, Types.NoneType) }
   | e1=exp MINUS e2=exp
     { Sub(e1, e2, Types.NoneType) }
+  | e1=exp MULT e2=exp
+    { Mult(e1, e2, Types.NoneType) }
   | e1=exp DIV e2=exp
     { Div(e1, e2, Types.NoneType) }
   | e1=exp FPLUS e2=exp
     { Addf(e1, e2, Types.NoneType) }
-  | e1=exp FMULT e2=exp
-    { Multf(e1, e2, Types.NoneType) }
+
   | e1=exp FMINUS e2=exp
     { Subf(e1, e2, Types.NoneType) }
+  | e1=exp FMULT e2=exp
+    { Multf(e1, e2, Types.NoneType) }
   | e1=exp FDIV e2=exp
     { Divf(e1, e2, Types.NoneType) }
   | e1=exp EQ e2=exp
@@ -134,32 +139,29 @@ exp:
     { Or(e1, e2, Types.NoneType) }
   | NOT e1=exp
     { Not(e1, Types.NoneType) }
-  | LET bindings=let_bindings IN e=exp
-    { Let(bindings, e, Types.NoneType) }
   | NEW e=exp
     { New(e, Types.NoneType) }
-  | e1=exp ASSIGN e2=exp
-    { Assign(e1, e2, Types.NoneType) }
   | DEREF e=exp
     { Deref(e, Types.NoneType) }
+  | e1=exp ASSIGN e2=exp
+    { Assign(e1, e2, Types.NoneType) } 
+  | PRINTLN e=exp
+    { PrintLn(e, Types.NoneType) }
+  | PRINT e=exp
+    { Print(e, Types.NoneType) }
   | IF e1=exp THEN e2=exp ELSE e3=exp END
     { IfThenElse(e1,e2,e3, Types.NoneType) }
   | IF e1=exp THEN e2=exp END
     { IfThen(e1,e2, Types.NoneType) }
   | WHILE e1=exp DO e2=exp END
     { While(e1,e2, Types.NoneType)}
-  | PRINTLN e=exp
-    { PrintLn(e, Types.NoneType) }
-  | PRINT e=exp
-    { Print(e, Types.NoneType) }
-  | UNIT
-    { UnitExp(Types.NoneType) }
-  | s=STRING
-    { String(s, Types.NoneType) }
   | FUN a=arg_list ARROW e=exp END
     { Fun(a, e, Types.NoneType) }
+  | LET bindings=let_bindings IN e=exp
+    { Let(bindings, e, Types.NoneType) }
   | e1=exp LPAR args=app_arguments_list RPAR
     { App(e1,args,Types.NoneType)}
+    
 
 
 

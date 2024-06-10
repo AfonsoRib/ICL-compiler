@@ -109,22 +109,21 @@ let suite =
     "test function composition 1">::test_eval_string "let f = (fun x:int -> x + 1 end) in let g = (fun y:int -> y * 2 end) in g(f(3))\n" (Ast.Int 8);
     "test function composition 2">::test_eval_string "let f = (fun x:int -> x + 1 end) in let g = (fun y:int -> y * 2 end) in let h = (fun z:int -> z - 1 end) in h(g(f(3)))\n" (Ast.Int 7);
     "test higher-order function 1">::test_eval_string "let apply = (fun f:(int -> int) x:int -> f(x) end) in let increment = (fun y:int -> y + 1 end) in apply(increment, 5)\n" (Ast.Int 6);
-    "test higher-order function 2">::test_eval_string "let apply_twice = (fun f:(int -> int) x:int -> f(f(x)) end) in let double = (fun y:int -> y * 2 end) in apply_twice(double, 3)\n" (Ast.Int 12);
-    "test recursive function 1">::test_eval_string "let rec fact = (fun n:int -> if n = 0 then 1 else n * fact(n - 1) end) in fact(5)\n" (Ast.Int 120);
-    "test recursive function 2">::test_eval_string "let rec fib = (fun n:int -> if n <= 1 then n else fib(n - 1) + fib(n - 2) end) in fib(10)\n" (Ast.Int 55);
+    "test higher-order function 2">::test_eval_string "let applytwice : ((int -> int), int -> int) = (fun f:(int -> int) x:int -> f(f(x)) end) in  let double = (fun y:int -> y * 2 end) in applytwice(double, 3)\n" (Ast.Int 12);
+    "test recursive function 1">::test_eval_string "let fact : (int -> int) = (fun n:int -> if (n = 0) then 1 else n * fact(n - 1) end end) in fact(5)\n" (Ast.Int 120);
+    "test recursive function 2">::test_eval_string "let fib : (int -> int) = (fun n:int -> if n <= 1 then n else fib(n - 1) + fib(n - 2) end end) in fib(10)\n" (Ast.Int 55);
     "test complex conditional 1">::test_eval_string "if true then if false then 1 else 2 end else 3 end\n" (Ast.Int 2);
     "test complex conditional 2">::test_eval_string "if false then if true then 1 else 2 end else 3 end\n" (Ast.Int 3);
     "test nested scopes 1">::test_eval_string "let x = 1 in let y = 2 in let z = x + y in z\n" (Ast.Int 3);
     "test nested scopes 2">::test_eval_string "let x = 1 in let f = (fun y:int -> x + y end) in f(10)\n" (Ast.Int 11);
     "test type mismatch wrong assignment">::test_expected_failure "let x = new 1 in !x := \"wrong type\"\n";
-    "test division by zero">::test_expected_failure "let x = 1 / 0 in x\n";
+    "test division by zero">::test_expected_failure "let x = 1 / 0 in x\n";                                           
     "test type mismatch function application">::test_expected_failure "let f = (fun x:int -> x + 1 end) in f(\"string\")\n";
     "test logical and/or 1">::test_eval_string "let x = true && (false || true) in x\n" (Ast.Bool true);
     "test logical and/or 2">::test_eval_string "let x = false || (true && false) in x\n" (Ast.Bool false);
-    "test complex while loop">::test_eval_string "let x = new 0 in while !x < 10 do x := !x + 1 end\n" Ast.Unit;
-    "test while loop with print">::test_eval_string "let x = new 0 in while !x < 10 do (println(!x); x := !x + 1) end\n" Ast.Unit;
+    "test complex while loop">::test_eval_string "let x = new 0 in while ((!x) < 10) do (println(!x); x := (!x + 1)) end\n" Ast.Unit;
     "test complex expression 1">::test_eval_string "let x = 1 + 2 * 3 - 4 / 2 in x\n" (Ast.Int 5);
-    "test complex expression 2">::test_eval_string "let x = 1.5 + 2.5 * 3.5 - 4.5 / 2.5 in x\n" (Ast.Float 7.2);
+    "test complex expression 2">::test_eval_string "let x = 1.5 +. 2.5 *. 3.5 -. 4.5 /. 2.5 in x\n" (Ast.Float 8.45);
     "test nested references 1">::test_eval_string "let x = new (new 1) in !(x)\n" (Ast.Ref (ref (Ast.Int 1)));
     "test nested references 2">::test_eval_string "let x = new (new true) in !(!x)\n" (Ast.Bool true);
   ]
